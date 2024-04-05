@@ -1,0 +1,418 @@
+package org.alc.blackjack.impl
+
+import mu.KotlinLogging
+import org.alc.blackjack.model.*
+import org.alc.card.impl.*
+import org.alc.card.model.*
+import java.security.SecureRandom
+import java.util.*
+
+private val logger = KotlinLogging.logger {}
+
+internal class PlayerHands {
+    var totalHands: Int = 0
+    val hands: ArrayList<HandImpl> = ArrayList()
+}
+
+class TableImpl(
+    override val minBet: Double = 1.0,
+    override val maxBet: Double = Int.MAX_VALUE.toDouble(),
+    override val rule: TableRule = TableRule(),
+    override val nbDecks: Int = 8,
+    gameShoe: GameShoe? = null,
+    random: Random? = null
+) : Table {
+
+    private val playerHands = LinkedHashMap<Player, PlayerHands>()
+    private var lastCardMarker: Int = 0
+
+    private var _random = random ?: SecureRandom()
+    private var _gameShoe = gameShoe ?: DefaultGameShoeImpl(RandomShuffler(_random))
+
+    private fun drawCard(visible: Boolean = true): Card {
+        val card = _gameShoe.dealCard()!!
+        if (visible) notifyCardDealt(card)
+        return card
+    }
+
+    private fun getLastCardMarker(): Int {
+        val nbRemainingCards = _gameShoe.nbRemainingCards()
+        val min = nbRemainingCards / 4
+        val max = nbRemainingCards / 3
+        return _random.nextInt(max - min) + min
+    }
+
+    private fun initGameShoe() {
+        _gameShoe.reset()
+        _gameShoe.addDecks(nbDecks, shuffled = true)
+        lastCardMarker = getLastCardMarker()
+        // throw first card
+        _gameShoe.dealCard()
+        playerHands.keys.forEach { it.deckShuffled() }
+    }
+
+    override fun addPlayer(player: Player): Boolean {
+        if (playerHands.contains(player)) {
+            return false
+        }
+        playerHands[player] = PlayerHands()
+        player.enteredTable(this)
+        return true
+    }
+
+    override fun removePlayer(player: Player): Boolean {
+        playerHands.remove(player) ?: return false
+        player.leftTable(this)
+        return true
+    }
+
+    override fun nbPlayers(): Int = playerHands.size
+
+    private fun getInitialBet(player: Player): Double? {
+        val maxRetry = 2
+        var retry = 0
+        while (retry <= maxRetry) {
+            val initialBet = player.initialBet()
+            if (initialBet <= 0.0) return null
+            if (initialBet < minBet || initialBet > maxBet)
+                logger.error("invalid bet: $initialBet, not between $minBet and $maxBet")
+            else if (initialBet > player.balance())
+                logger.error("Invalid bet: $initialBet is less than account balance: ${player.balance()}")
+            else
+                return initialBet
+            retry += 1
+        }
+        logger.error("Too many invalid bets. Kicking player out of table")
+        return null
+    }
+
+    private fun initPlayerHands() {
+        playerHands.forEach { (player, ph) ->
+            ph.hands.clear()
+            when (val initialBet = getInitialBet(player)) {
+                null -> logger.info("Player is leaving table")
+                else -> {
+                    player.withdraw(initialBet)
+                    val h = HandImpl(initialBet)
+                    ph.totalHands = 1
+                    ph.hands.add(h)
+                }
+            }
+        }
+
+        playerHands.filter { (_, ph) -> ph.hands.isNotEmpty() }
+        if (playerHands.isEmpty()) {
+            logger.info("No more players left. Wrapping up")
+        }
+    }
+
+    private fun dealOneCardToEachPlayer() {
+        playerHands.forEach { (player, ph) ->
+            ph.hands.forEach { hand -> dealCardToPlayer(player, hand) }
+        }
+    }
+
+    private fun dealCardToPlayer(player: Player, hand: HandImpl) {
+        val card = drawCard()
+        hand.addCard(card)
+        player.received(card)
+        logger.info("Player got $card")
+    }
+
+    private fun notifyCardDealt(card: Card) {
+        playerHands.keys.forEach { it.cardDealt(card) }
+    }
+
+    private fun offerInsuranceOrEqualPayment() {
+        playerHands.forEach { (player, ph) ->
+            ph.hands.forEach { hand ->
+                if (hand.isBlackJack()) {
+                    hand.equalPayment = player.equalPayment()
+                } else if (player.insurance(hand)) {
+                    val insuranceAmount = hand.initialBet * 0.5
+                    if (insuranceAmount > player.balance()) {
+                        logger.info(
+                            "Can't insure hand: required = $insuranceAmount, available = ${player.balance()}"
+                        )
+                    } else {
+                        player.withdraw(insuranceAmount)
+                        hand.insure(insuranceAmount)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun recordPush(player: Player, hand: Hand) {
+        logger.info("Push")
+        player.deposit(hand.totalBet())
+        if (hand.insurance() > 0.0)
+            player.recordLoss(hand.insurance())
+        else
+            player.recordPush()
+    }
+
+    private fun recordWin(player: Player, hand: Hand, factor: Double) {
+        val rawAmountWon = hand.totalBet() * factor
+        logger.info("Player won $rawAmountWon")
+        player.deposit(hand.totalBet() + rawAmountWon)
+        player.recordWin(rawAmountWon - hand.insurance())
+    }
+
+    private fun recordLoss(player: Player, hand: Hand) {
+        val netLoss = if (hand.surrendered())
+            hand.totalBet() / 2.0
+        else
+            hand.totalBet() + hand.insurance()
+        logger.info("Player loss $netLoss")
+        player.recordLoss(netLoss)
+    }
+
+    private fun handleDealerBlackJack(dealerHand: Hand) {
+        playerHands.forEach { (player, ph) ->
+            player.finalDealerHand(dealerHand)
+            ph.hands.forEach { hand ->
+                player.finalHand(hand)
+                if (hand.isBlackJack()) {
+                    if (!hand.equalPayment)
+                        recordPush(player, hand)
+                    else
+                        recordWin(player, hand, 1.0)
+                } else {
+                    val insurance = hand.insurance()
+                    if (insurance > 0.0) {
+                        player.deposit(insurance)
+                        hand.insure(0.0)
+                        recordPush(player, hand)
+                    } else {
+                        recordLoss(player, hand)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun drawOneCardAndGetScore(hand: HandImpl, player: Player?): Int {
+        val name = player?.let { "Player" } ?: "Dealer"
+        val card = drawCard()
+        logger.info("$name draw $card")
+        hand.addCard(card)
+        player?.received(card) ?: playerHands.keys.forEach { it.dealerReceived(card) }
+
+        val score = hand.score()
+        if (score > 21)
+            logger.info("$name busted with score: $score")
+        else
+            logger.info("$name score is $score")
+        return score
+    }
+
+    private fun canSplit(player: Player, hand: Hand) = hand.canBeSplit() && player.balance() >= hand.initialBet
+    private fun canDouble(player: Player, hand: Hand) = hand.canBeDoubled(rule) && player.balance() >= hand.initialBet
+    private fun canSurrender(hand: Hand) = rule.allowSurrender && hand.canSurrender()
+
+    private fun playerStands(player: Player, hand: Hand) {
+        logger.info("Player stand with hand = ${hand.score()}")
+    }
+
+    private fun playerDoubles(player: Player, hand: HandImpl) {
+        logger.info("Player double for one card")
+        player.withdraw(hand.initialBet)
+        hand.doubleBet()
+        drawOneCardAndGetScore(hand, player)
+        logger.info("Player total is ${hand.score()}")
+    }
+
+    private fun playerSplits(player: Player, ph: PlayerHands, hand: HandImpl, pos: Int): HandImpl {
+        logger.info("Player split on ${Hand.value(hand.getCard(0))}")
+        val isAce: Boolean = hand.getCard(0).rank == Rank.ACE
+        val canBeSplit = ph.totalHands < rule.maxSplit - 1 && (!isAce || rule.allowMultipleSplitAces)
+        val canBeHit = !isAce || rule.allowHitSplitAces
+
+        ph.hands.removeAt(pos)
+        player.withdraw(hand.initialBet)
+        val h1 = HandImpl(
+            initialBet = hand.initialBet,
+            canBeSplit = canBeSplit,
+            canBeHit = canBeHit,
+            isFromSplit = true
+        )
+        val h2 = HandImpl(
+            initialBet = hand.initialBet,
+            canBeSplit = canBeSplit,
+            canBeHit = canBeHit,
+            isFromSplit = true
+        )
+        h1.addCard(hand.getCard(0))
+        h2.addCard(hand.getCard(1))
+        ph.hands.add(pos, h2)
+        ph.hands.add(pos, h1)
+        ph.totalHands += 1
+        return h1
+    }
+
+    private tailrec fun getPlayerDecision(
+        player: Player,
+        hand: HandImpl,
+        dealerUpCard: Card,
+        retryCount: Int = 0
+    ): Decision {
+        val decision = player.nextMove(hand, dealerUpCard)
+        when (decision) {
+            Decision.STAND, Decision.HIT -> return decision
+            Decision.SURRENDER -> if (canSurrender(hand)) return decision
+            Decision.DOUBLE -> if (canDouble(player, hand)) return decision
+            Decision.SPLIT -> if (canSplit(player, hand)) return decision
+        }
+        logger.warn("Illegal decision: $decision")
+        if (retryCount >= 2) {
+            logger.warn("Too many illegal decisions.  Reverting to STAND")
+            return Decision.STAND
+        }
+        return getPlayerDecision(player, hand, dealerUpCard, retryCount + 1)
+    }
+
+    private tailrec fun playHand(player: Player, ph: PlayerHands, hand: HandImpl, pos: Int, dealerUpCard: Card) {
+        if (hand.nbCards() < 2) {
+            val score = drawOneCardAndGetScore(hand, player)
+            if (score >= 21) return
+        }
+        if (!hand.canBeHit) return
+
+        when (getPlayerDecision(player, hand, dealerUpCard)) {
+            Decision.STAND -> playerStands(player, hand)
+            Decision.DOUBLE -> playerDoubles(player, hand)
+
+            Decision.SPLIT -> {
+                val h = playerSplits(player, ph, hand, pos)
+                playHand(player, ph, h, pos, dealerUpCard)
+            }
+
+            Decision.HIT -> {
+                if (drawOneCardAndGetScore(hand, player) < 21)
+                    playHand(player, ph, hand, pos, dealerUpCard)
+            }
+
+            Decision.SURRENDER -> {
+                logger.info("Player surrender with score = ${hand.score()}")
+                hand.surrender()
+            }
+        }
+    }
+
+    private fun playHands(dealerUpCard: Card) {
+        playerHands.forEach { (player, ph) ->
+            var i = 0
+            val hands = ph.hands
+            while (i < hands.size) {
+                val hand = hands[i]
+                if (hand.isBlackJack()) {
+                    player.finalHand(hand)
+                    if (hand.equalPayment) {
+                        logger.info("Player accepted equal payment on Blackjack")
+                        recordWin(player, hand, 1.0)
+                    } else {
+                        logger.info("BlackJack pays ${rule.blackjackPayFactor} the bet")
+                        recordWin(player, hand, rule.blackjackPayFactor)
+                    }
+                    hands.removeAt(i)
+                } else {
+                    playHand(player, ph, hand, i, dealerUpCard)
+                    val h = hands[i]
+                    player.finalHand(h)
+                    if (h.isBusted()) {
+                        recordLoss(player, h)
+                        hands.removeAt(i)
+                    } else if (h.surrendered()) {
+                        player.deposit(hand.totalBet() / 2.0)
+                        recordLoss(player, h)
+                        hands.removeAt(i)
+                    } else {
+                        i += 1
+                    }
+                }
+            }
+        }
+    }
+
+    private fun dealerPlay(hand: HandImpl) {
+        var done = false
+        while (!done) {
+            val score = hand.score()
+            if (score > 17) done = true
+            else if (score < 17 || (rule.dealerHitsOnSoft17 && hand.isSoft())) drawOneCardAndGetScore(hand, null)
+            else done = true
+        }
+    }
+
+    private fun payWinningHands(dealerHand: Hand) {
+        val dealerScore = dealerHand.score()
+        playerHands.forEach { (player, ph) ->
+            ph.hands.forEach { hand ->
+                val score = hand.score()
+                when {
+                    dealerScore > 22 || (dealerScore == 22 && !rule.pushOn22) -> recordWin(player, hand, 1.0)
+                    score > dealerScore -> recordWin(player, hand, 1.0)
+                    score == dealerScore || dealerScore == 22 -> recordPush(player, hand)
+                    else -> recordLoss(player, hand)
+                }
+            }
+        }
+    }
+
+    private fun showHiddenCard(hiddenDealerCard: Card, visibleDealerCard: Card): HandImpl {
+        logger.info("Dealer's hidden card is turned: $hiddenDealerCard")
+        notifyCardDealt(hiddenDealerCard)
+        playerHands.keys.forEach { it.dealerCardVisible(hiddenDealerCard) }
+
+        val dealerHand = HandImpl(
+            initialBet = 0.0,
+            canBeSplit = false,
+            isFromSplit = false
+        )
+
+        dealerHand.addCard(visibleDealerCard)
+        dealerHand.addCard(hiddenDealerCard)
+        return dealerHand
+    }
+
+    override fun newRound(): Boolean {
+        initPlayerHands()
+        if (playerHands.isEmpty()) {
+            return false
+        }
+
+        if (_gameShoe.nbRemainingCards() <= lastCardMarker) initGameShoe()
+        dealOneCardToEachPlayer()
+        val visibleDealerCard = drawCard()
+        dealOneCardToEachPlayer()
+        val hiddenDealerCard = drawCard(visible = false)
+        playerHands.keys.forEach { it.dealerReceived(visibleDealerCard) }
+        logger.info("Dealer's visible card is $visibleDealerCard")
+
+        // handle potential dealer black jack
+        if (visibleDealerCard.rank == Rank.ACE) {
+            offerInsuranceOrEqualPayment()
+            val hiddenCardValue = Hand.value(hiddenDealerCard)
+            if (hiddenCardValue == 10) {
+                val dealerHand = showHiddenCard(hiddenDealerCard, visibleDealerCard)
+                handleDealerBlackJack(dealerHand)
+                return true
+            }
+        } else if (Hand.value(visibleDealerCard) == 10 && hiddenDealerCard.rank == Rank.ACE) {
+            val dealerHand = showHiddenCard(hiddenDealerCard, visibleDealerCard)
+            handleDealerBlackJack(dealerHand)
+            return true
+        }
+
+        playHands(visibleDealerCard)
+        val dealerHand = showHiddenCard(hiddenDealerCard, visibleDealerCard)
+        if (playerHands.values.any { it.hands.isNotEmpty()}) dealerPlay(dealerHand)
+        playerHands.keys.forEach { it.finalDealerHand(dealerHand) }
+        payWinningHands(dealerHand)
+        return true
+    }
+
+    override fun createAccount(initialAmount: Double) = AccountImpl(initialAmount)
+}
+
