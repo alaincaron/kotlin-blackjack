@@ -60,7 +60,7 @@ class TableImplTest {
 
     private fun prepareShoe(vararg cards: Card) {
         every { shoe.dealCard() } returnsMany listOf(
-            Card(Rank.TWO, Suit.SPADES), // throw-away card
+            Card.two.spades, // throw-away card
             *cards
         )
         every { strategy.initialBet() } returns minBet
@@ -71,10 +71,10 @@ class TableImplTest {
     fun `should offer insurance on visible ace and payback insurance if blackjack`() {
         initTable()
         val cards = arrayOf(
-            Card(Rank.FIVE, Suit.CLUBS), // player 1st card
-            Card(Rank.ACE, Suit.DIAMONDS), // dealer visible card
-            Card(Rank.SIX, Suit.HEARTS),  // player 2nd card
-            Card(Rank.QUEEN, Suit.SPADES), // dealer hidden card
+            Card.five.clubs, // player 1st card
+            Card.ace.diamonds, // dealer visible card
+            Card.six.hearts,  // player 2nd card
+            Card.queen.spades, // dealer hidden card
         )
         prepareShoe(*cards)
         val dealerCards = listOf(cards[1], cards[3])
@@ -96,10 +96,10 @@ class TableImplTest {
         initTable()
 
         val cards = arrayOf(
-            Card(Rank.FIVE, Suit.SPADES), // player 1st card
-            Card(Rank.ACE, Suit.DIAMONDS), // dealer visible card
-            Card(Rank.SIX, Suit.HEARTS),  // player 2nd card
-            Card(Rank.KING, Suit.SPADES), // dealer hidden card
+            Card.five.spades, // player 1st card
+            Card.ace.diamonds, // dealer visible card
+            Card.six.hearts,  // player 2nd card
+            Card.king.spades, // dealer hidden card
         )
         val playerCards = listOf(cards[0], cards[2])
         val dealerCards = listOf(cards[1], cards[3])
@@ -121,11 +121,11 @@ class TableImplTest {
     fun `should offer insurance on visible ace and play normally if insurance refused`() {
         initTable()
         val cards = arrayOf(
-            Card(Rank.FIVE, Suit.SPADES), // player 1st card
-            Card(Rank.ACE, Suit.SPADES), // dealer visible card
-            Card(Rank.SIX, Suit.HEARTS),  // player 2nd card
-            Card(Rank.NINE, Suit.DIAMONDS), // dealer hidden card
-            Card(Rank.TEN, Suit.HEARTS) // player 3rd card
+            Card.five.spades, // player 1st card
+            Card.ace.spades, // dealer visible card
+            Card.six.hearts,  // player 2nd card
+            Card.nine.diamonds, // dealer hidden card
+            Card.ten.hearts // player 3rd card
         )
         prepareShoe(*cards)
         val dealerCards = listOf(cards[1], cards[3])
@@ -147,10 +147,10 @@ class TableImplTest {
     fun `should offer equal payment on visible ace and both have blackjack and push if refused`() {
         initTable()
         prepareShoe(
-            Card(Rank.ACE, Suit.SPADES), // player 1st card
-            Card(Rank.ACE, Suit.SPADES), // dealer visible card
-            Card(Rank.KING, Suit.HEARTS),  // player 2nd card
-            Card(Rank.KING, Suit.DIAMONDS) // dealer hidden card
+            Card.ace.spades, // player 1st card
+            Card.ace.spades, // dealer visible card
+            Card.king.hearts,  // player 2nd card
+            Card.king.diamonds // dealer hidden card
         )
         every { strategy.equalPayment() } returns false
 
@@ -165,10 +165,10 @@ class TableImplTest {
     fun `should offer equal payment on visible ace and both have blackjack and pay if accepted`() {
         initTable()
         prepareShoe(
-            Card(Rank.ACE, Suit.SPADES), // player 1st card
-            Card(Rank.ACE, Suit.SPADES), // dealer visible card
-            Card(Rank.KING, Suit.HEARTS),  // player 2nd card
-            Card(Rank.KING, Suit.DIAMONDS) // dealer hidden card
+            Card.ace.spades, // player 1st card
+            Card.ace.spades, // dealer visible card
+            Card.king.hearts,  // player 2nd card
+            Card.king.diamonds // dealer hidden card
         )
         every { strategy.equalPayment() } returns true
 
@@ -183,10 +183,10 @@ class TableImplTest {
     fun `should offer equal payment on visible ace and pay bet if accepted`() {
         initTable()
         prepareShoe(
-            Card(Rank.ACE, Suit.SPADES), // player 1st card
-            Card(Rank.ACE, Suit.SPADES), // dealer visible card
-            Card(Rank.KING, Suit.HEARTS),  // player 2nd card
-            Card(Rank.ACE, Suit.DIAMONDS) // dealer hidden card
+            Card.ace.spades, // player 1st card
+            Card.ace.spades, // dealer visible card
+            Card.king.hearts,  // player 2nd card
+            Card.ace.diamonds // dealer hidden card
         )
         every { strategy.equalPayment() } returns true
 
@@ -201,10 +201,10 @@ class TableImplTest {
     fun `should offer equal payment on visible ace and pay premium bet if refused`() {
         initTable()
         prepareShoe(
-            Card(Rank.ACE, Suit.SPADES), // player 1st card
-            Card(Rank.ACE, Suit.SPADES), // dealer visible card
-            Card(Rank.KING, Suit.HEARTS),  // player 2nd card
-            Card(Rank.ACE, Suit.DIAMONDS) // dealer hidden card
+            Card.ace.spades, // player 1st card
+            Card.ace.spades, // dealer visible card
+            Card.king.hearts,  // player 2nd card
+            Card.ace.diamonds // dealer hidden card
         )
         every { strategy.equalPayment() } returns false
 
@@ -220,13 +220,13 @@ class TableImplTest {
         initTable()
 
         val cards = arrayOf(
-            Card(Rank.ACE, Suit.SPADES),   // player 1st card
-            Card(Rank.SIX, Suit.SPADES),   // dealer visible card
-            Card(Rank.ACE, Suit.HEARTS),   // player 2nd card
-            Card(Rank.SIX, Suit.DIAMONDS), // dealer hidden card
-            Card(Rank.TEN, Suit.DIAMONDS), // player 2nd card, 1st hand
-            Card(Rank.ACE, Suit.DIAMONDS), // player 2nd card, 2nd
-            Card(Rank.FIVE, Suit.SPADES)   // dealer 3rd card
+            Card.ace.spades,   // player 1st card
+            Card.six.spades,   // dealer visible card
+            Card.ace.hearts,   // player 2nd card
+            Card.six.diamonds, // dealer hidden card
+            Card.ten.diamonds, // player 2nd card, 1st hand
+            Card.ace.diamonds, // player 2nd card, 2nd
+            Card.five.spades   // dealer 3rd card
         )
         prepareShoe(*cards)
         val dealerCards = listOf(cards[1], cards[3], cards[6])
@@ -250,15 +250,15 @@ class TableImplTest {
     fun `should allow to double ot hit on split of pair of non-aces`() {
         initTable()
         prepareShoe(
-            Card(Rank.EIGHT, Suit.SPADES),   // player 1st card
-            Card(Rank.SIX, Suit.SPADES),   // dealer visible card
-            Card(Rank.EIGHT, Suit.HEARTS),   // player 2nd card
-            Card(Rank.SIX, Suit.DIAMONDS), // dealer hidden card
-            Card(Rank.THREE, Suit.DIAMONDS), // player 2nd card, 1st hand
-            Card(Rank.TEN, Suit.HEARTS),    // player 3rd card, 1st hand
-            Card(Rank.SIX, Suit.DIAMONDS), // player 2nd card, 2nd hand
-            Card(Rank.TEN, Suit.SPADES),   // player 3rd, 3rd hand
-            Card(Rank.FIVE, Suit.SPADES)   // dealer 3rd card
+            Card.eight.spades,   // player 1st card
+            Card.six.spades,   // dealer visible card
+            Card.eight.hearts,   // player 2nd card
+            Card.six.diamonds, // dealer hidden card
+            Card.three.diamonds, // player 2nd card, 1st hand
+            Card.ten.hearts,    // player 3rd card, 1st hand
+            Card.six.diamonds, // player 2nd card, 2nd hand
+            Card.ten.spades,   // player 3rd, 3rd hand
+            Card.five.spades   // dealer 3rd card
         )
         every { strategy.nextMove(any(), any()) } returnsMany listOf(
             Decision.SPLIT,
@@ -279,10 +279,10 @@ class TableImplTest {
     fun `should stand on soft 17 if dealHitsOnSoft17 rule is not enabled`() {
         initTable(dealerHitsOnSoft17 = false)
         prepareShoe(
-            Card(Rank.EIGHT, Suit.SPADES),   // player 1st card
-            Card(Rank.SIX, Suit.SPADES),   // dealer visible card
-            Card(Rank.NINE, Suit.HEARTS),   // player 2nd card
-            Card(Rank.ACE, Suit.DIAMONDS), // dealer hidden card
+            Card.eight.spades,   // player 1st card
+            Card.six.spades,   // dealer visible card
+            Card.nine.hearts,   // player 2nd card
+            Card.ace.diamonds, // dealer hidden card
         )
         every { strategy.nextMove(any(), any()) } returns Decision.STAND
 
@@ -290,21 +290,21 @@ class TableImplTest {
 
         verify { strategy.recordPush() }
         assertEquals(initialAmount, account.balance())
-        verify { strategy.dealerReceived(Card(Rank.SIX, Suit.SPADES)) }
-        verify { strategy.dealerCardVisible(Card(Rank.ACE, Suit.DIAMONDS)) }
-        verify { strategy.received(Card(Rank.EIGHT, Suit.SPADES)) }
-        verify { strategy.received(Card(Rank.NINE, Suit.HEARTS)) }
+        verify { strategy.dealerReceived(Card.six.spades) }
+        verify { strategy.dealerCardVisible(Card.ace.diamonds) }
+        verify { strategy.received(Card.eight.spades) }
+        verify { strategy.received(Card.nine.hearts) }
     }
 
     @Test
     fun `should hit on soft 17 if dealHitsOnSoft17 rule is enabled`() {
         initTable()
         prepareShoe(
-            Card(Rank.EIGHT, Suit.SPADES),   // player 1st card
-            Card(Rank.SIX, Suit.SPADES),   // dealer visible card
-            Card(Rank.NINE, Suit.HEARTS),   // player 2nd card
-            Card(Rank.ACE, Suit.DIAMONDS), // dealer hidden card
-            Card(Rank.THREE, Suit.SPADES)
+            Card.eight.spades,   // player 1st card
+            Card.six.spades,   // dealer visible card
+            Card.nine.hearts,   // player 2nd card
+            Card.ace.diamonds, // dealer hidden card
+            Card.three.spades
         )
         every { strategy.nextMove(any(), any()) } returns Decision.STAND
 
@@ -312,10 +312,10 @@ class TableImplTest {
 
         verify { strategy.recordLoss(minBet) }
         assertEquals(initialAmount - minBet, account.balance())
-        verify { strategy.dealerReceived(Card(Rank.SIX, Suit.SPADES)) }
-        verify { strategy.dealerCardVisible(Card(Rank.ACE, Suit.DIAMONDS)) }
-        verify { strategy.dealerReceived(Card(Rank.THREE, Suit.SPADES)) }
-        verify { strategy.received(Card(Rank.EIGHT, Suit.SPADES)) }
-        verify { strategy.received(Card(Rank.NINE, Suit.HEARTS)) }
+        verify { strategy.dealerReceived(Card.six.spades) }
+        verify { strategy.dealerCardVisible(Card.ace.diamonds) }
+        verify { strategy.dealerReceived(Card.three.spades) }
+        verify { strategy.received(Card.eight.spades) }
+        verify { strategy.received(Card.nine.hearts) }
     }
 }

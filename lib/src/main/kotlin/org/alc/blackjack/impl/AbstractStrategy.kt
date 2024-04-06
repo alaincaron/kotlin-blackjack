@@ -24,7 +24,8 @@ abstract class AbstractStrategy(override val account: Account) : Strategy {
         }
     }
 
-    protected fun table() = _table
+    protected fun table() = _table ?: throw IllegalStateException("No table")
+    protected fun tableNoThrow() = _table
 
     override fun recordPush() {
         ++_nbPush

@@ -5,8 +5,6 @@ import org.alc.blackjack.model.TableRule
 import org.alc.card.model.Card
 import org.alc.card.model.Rank
 import org.alc.card.model.Suit
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class HandImplTest {
@@ -23,94 +21,86 @@ class HandImplTest {
             isFromSplit = isFromSplit
         )
 
-    @BeforeEach
-    fun setUp() {
-    }
-
-    @AfterEach
-    fun tearDown() {
-    }
-
     @Test
     fun `should respect constructor canBeHit flag`() {
         val hand = createHand(canBeHit = false)
-        hand.addCard(Card(Rank.FOUR, Suit.CLUBS))
-        hand.addCard(Card(Rank.SEVEN, Suit.SPADES))
+        hand.addCard(Card.four.clubs)
+        hand.addCard(Card.seven.spades)
         assert(!hand.canBeDoubled(TableRule.DEFAULT))
     }
 
     @Test
     fun `should allow doubling when allowed`() {
         val hand = createHand()
-        hand.addCard(Card(Rank.FOUR, Suit.CLUBS))
-        hand.addCard(Card(Rank.SEVEN, Suit.SPADES))
+        hand.addCard(Card.four.clubs)
+        hand.addCard(Card.seven.spades)
         assert(hand.canBeDoubled(TableRule.DEFAULT))
     }
 
     @Test
     fun `should disallow doubling when more than 2 cards with default rules`() {
         val hand = createHand()
-        hand.addCard(Card(Rank.FOUR, Suit.CLUBS))
-        hand.addCard(Card(Rank.TWO, Suit.SPADES))
-        hand.addCard(Card(Rank.FIVE, Suit.HEARTS))
+        hand.addCard(Card.four.clubs)
+        hand.addCard(Card.two.spades)
+        hand.addCard(Card.five.hearts)
         assert(!hand.canBeDoubled(TableRule.DEFAULT))
     }
 
     @Test
     fun `should allow doubling when more than 2 cards when rule allows it`() {
         val hand = createHand()
-        hand.addCard(Card(Rank.FOUR, Suit.CLUBS))
-        hand.addCard(Card(Rank.TWO, Suit.SPADES))
-        hand.addCard(Card(Rank.FIVE, Suit.HEARTS))
+        hand.addCard(Card.four.clubs)
+        hand.addCard(Card.two.spades)
+        hand.addCard(Card.five.hearts)
         assert(hand.canBeDoubled(TableRule.DEFAULT.copy(allowDoubleAnytime = true)))
     }
 
     @Test
     fun `should respect constructor canBeSplit flag`() {
         val hand = createHand(canBeSplit = false)
-        hand.addCard(Card(Rank.FOUR, Suit.CLUBS))
-        hand.addCard(Card(Rank.FOUR, Suit.SPADES))
+        hand.addCard(Card.four.clubs)
+        hand.addCard(Card.four.spades)
         assert(!hand.canBeSplit())
     }
 
     @Test
     fun `should allow splitting ACES`() {
         val hand = createHand()
-        hand.addCard(Card(Rank.ACE, Suit.CLUBS))
-        hand.addCard(Card(Rank.ACE, Suit.SPADES))
+        hand.addCard(Card.ace.clubs)
+        hand.addCard(Card.ace.spades)
         assert(hand.canBeSplit())
     }
 
     @Test
     fun `should allow splitting pairs`() {
         val hand = createHand()
-        hand.addCard(Card(Rank.FOUR, Suit.CLUBS))
-        hand.addCard(Card(Rank.FOUR, Suit.SPADES))
+        hand.addCard(Card.four.clubs)
+        hand.addCard(Card.four.spades)
         assert(hand.canBeSplit())
     }
 
     @Test
     fun `should allow splitting figures`() {
         val hand = createHand()
-        hand.addCard(Card(Rank.KING, Suit.CLUBS))
-        hand.addCard(Card(Rank.JACK, Suit.SPADES))
+        hand.addCard(Card.king.clubs)
+        hand.addCard(Card.jack.spades)
         assert(hand.canBeSplit())
     }
 
     @Test
     fun `should disallow splitting when not a pair`() {
         val hand = createHand()
-        hand.addCard(Card(Rank.KING, Suit.CLUBS))
-        hand.addCard(Card(Rank.FIVE, Suit.SPADES))
+        hand.addCard(Card.king.clubs)
+        hand.addCard(Card.five.spades)
         assert(!hand.canBeSplit())
     }
 
     @Test
     fun `should disallow splitting when more than 2 cards`() {
         val hand = createHand()
-        hand.addCard(Card(Rank.FOUR, Suit.CLUBS))
-        hand.addCard(Card(Rank.FOUR, Suit.SPADES))
-        hand.addCard(Card(Rank.FOUR, Suit.HEARTS))
+        hand.addCard(Card.four.clubs)
+        hand.addCard(Card.four.spades)
+        hand.addCard(Card.four.hearts)
         assert(!hand.canBeSplit())
     }
 
@@ -124,7 +114,7 @@ class HandImplTest {
                 val c2 = Card(r2, Suit.HEARTS)
                 h.addCard(c1)
                 h.addCard(c2)
-                val total = Hand.value(c1) + Hand.value(c2)
+                val total = c1.value + c2.value
                 val canBeFreelyDoubled = !h.isSoft() && (total in 9..11)
                 assert(h.canBeFreelyDoubled(rule) == canBeFreelyDoubled) { "canBeFreelyDoubled failed for $r1 and $r2" }
             }
@@ -141,7 +131,8 @@ class HandImplTest {
                 val c2 = Card(r2, Suit.HEARTS)
                 h.addCard(c1)
                 h.addCard(c2)
-                val splittable = Hand.value(c1) == Hand.value(c2) && Hand.value(c1) != 10
+                val value = c1.value
+                val splittable = value != 10  && value == c2.value
                 assert(h.canBeFreelySplit(rule) == splittable) { "isFreeSplittable failed for $r1 and $r2" }
             }
         }

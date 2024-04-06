@@ -1,24 +1,28 @@
 package org.alc.card.model
 
 import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
 
 class CardTest {
 
     @Test fun getCardTest() {
         var card = Card(Rank.KING, Suit.DIAMONDS)
-        assert(Rank.KING == card.rank)
-        assert(Suit.DIAMONDS == card.suit)
+        assertSame(Rank.KING, card.rank)
+        assertSame(Suit.DIAMONDS, card.suit)
+        assertSame(card, Card.king.diamonds)
 
         card = Card(Rank.ACE, Suit.SPADES)
-        assert(Rank.ACE == card.rank)
-        assert(Suit.SPADES == card.suit)
+        assertSame(Rank.ACE, card.rank)
+        assertSame(Suit.SPADES, card.suit)
+        assertSame(card, Card.ace.spades)
     }
 
     @Test fun toStringTest() {
-        var card = Card(Rank.FIVE, Suit.SPADES)
-        assert(card.toString() == "FIVE of SPADES")
+        var card = Card.five.spades
+        assertEquals("FIVE of SPADES", card.toString())
 
-        card = Card(Rank.ACE, Suit.DIAMONDS)
-        assert(card.toString() == "ACE of DIAMONDS")
+        card = Card.ace.diamonds
+        assertEquals("ACE of DIAMONDS", card.toString())
     }
 }

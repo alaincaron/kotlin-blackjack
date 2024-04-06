@@ -36,7 +36,7 @@ internal class HandImpl(
 
 
     override fun canBeSplit() =
-        canBeSplit && cards.size == 2 && Hand.value(cards[0]) == Hand.value(cards[1])
+        canBeSplit && cards.size == 2 && cards[0].value == cards[1].value
 
     override fun canBeDoubled(rule: TableRule) = when (cards.size) {
         0, 1 -> false
@@ -46,7 +46,7 @@ internal class HandImpl(
 
     override fun addCard(c: Card) {
         cards.add(c)
-        _score += Hand.value(c)
+        _score += c.value
         if (c.rank == Rank.ACE || _soft) {
             _soft = _score <= 11
         }

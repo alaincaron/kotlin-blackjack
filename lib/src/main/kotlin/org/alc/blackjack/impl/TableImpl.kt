@@ -100,7 +100,8 @@ class TableImpl(
             }
         }
 
-        playerHands.filter { (_, ph) -> ph.hands.isNotEmpty() }
+        playerHands.filterValues { it.hands.isEmpty() }.keys.forEach { playerHands.remove(it) }
+
         if (playerHands.isEmpty()) {
             logger.info("No more players left. Wrapping up")
         }
@@ -211,7 +212,7 @@ class TableImpl(
     private fun canDouble(player: Player, hand: Hand) = hand.canBeDoubled(rule) && player.balance() >= hand.initialBet
     private fun canSurrender(hand: Hand) = rule.allowSurrender && hand.canSurrender()
 
-    private fun playerStands(player: Player, hand: Hand) {
+    private fun playerStands(@Suppress("UNUSED_PARAMETER") player: Player, hand: Hand) {
         logger.info("Player stand with hand = ${hand.score()}")
     }
 
@@ -224,7 +225,7 @@ class TableImpl(
     }
 
     private fun playerSplits(player: Player, ph: PlayerHands, hand: HandImpl, pos: Int): HandImpl {
-        logger.info("Player split on ${Hand.value(hand.getCard(0))}")
+        logger.info("Player split on ${hand[0].value}")
         val isAce: Boolean = hand.getCard(0).rank == Rank.ACE
         val canBeSplit = ph.totalHands < rule.maxSplit - 1 && (!isAce || rule.allowMultipleSplitAces)
         val canBeHit = !isAce || rule.allowHitSplitAces
@@ -393,13 +394,13 @@ class TableImpl(
         // handle potential dealer black jack
         if (visibleDealerCard.rank == Rank.ACE) {
             offerInsuranceOrEqualPayment()
-            val hiddenCardValue = Hand.value(hiddenDealerCard)
+            val hiddenCardValue = hiddenDealerCard.value
             if (hiddenCardValue == 10) {
                 val dealerHand = showHiddenCard(hiddenDealerCard, visibleDealerCard)
                 handleDealerBlackJack(dealerHand)
                 return true
             }
-        } else if (Hand.value(visibleDealerCard) == 10 && hiddenDealerCard.rank == Rank.ACE) {
+        } else if (visibleDealerCard.value == 10 && hiddenDealerCard.rank == Rank.ACE) {
             val dealerHand = showHiddenCard(hiddenDealerCard, visibleDealerCard)
             handleDealerBlackJack(dealerHand)
             return true

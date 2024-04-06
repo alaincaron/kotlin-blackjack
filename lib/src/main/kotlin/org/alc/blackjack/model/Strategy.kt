@@ -15,7 +15,6 @@ interface Strategy {
 
     fun cardDealt(card: Card)  {}
     fun deckShuffled()  {}
-
     fun received(card: Card)
     fun dealerReceived(card: Card)
     fun dealerCardVisible(card: Card)
