@@ -39,7 +39,7 @@ open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
         return result
     }
 
-    override fun initialBet(): Double =
+    override fun initialBet(): Int =
         queryUser(
             { print("Initial bet: between ${table().minBet} and ${table().maxBet}, or 0 to quit. > ") },
             { reply: String ->
@@ -50,7 +50,7 @@ open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
                 } catch (e: NumberFormatException) {
                     // ignore
                 }
-                result?.toDouble()
+                result
             }
         )
 

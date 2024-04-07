@@ -7,7 +7,7 @@ import org.alc.card.model.Rank
 
 
 internal class HandImpl(
-    override val initialBet: Double,
+    override val initialBet: Int,
     override val isFromSplit: Boolean = false,
     override val canBeHit: Boolean = true,
     private val canBeSplit: Boolean = true

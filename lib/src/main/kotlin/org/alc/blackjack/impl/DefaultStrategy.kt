@@ -15,10 +15,10 @@ open class DefaultStrategy(account: Account, gainFactor: Double = 1.0) : Abstrac
 
     override fun equalPayment() = table().rule.blackjackPayFactor < 1.5
 
-    override fun initialBet(): Double {
+    override fun initialBet(): Int {
         val minBet = table().minBet
         val balance = account.balance()
-        return if (balance >= upperBound || balance < minBet) 0.0 else minBet
+        return if (balance >= upperBound || balance < minBet) 0 else minBet
     }
 
     override fun nextMove(hand: Hand, dealerCard: Card): Decision {

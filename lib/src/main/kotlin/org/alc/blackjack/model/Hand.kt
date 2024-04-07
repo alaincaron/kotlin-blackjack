@@ -14,9 +14,9 @@ interface Hand {
     fun surrendered(): Boolean
     fun canBeSplit(): Boolean
     fun isSoft(): Boolean
-    val initialBet: Double
+    val initialBet: Int
     fun insurance(): Double
-    fun totalBet(): Double
+    fun totalBet(): Int
     fun canBeDoubled(rule: TableRule): Boolean
     fun getCard(idx: Int): Card
     fun canSurrender(): Boolean = nbCards() == 2 && !isFromSplit

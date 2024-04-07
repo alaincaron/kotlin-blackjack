@@ -10,7 +10,7 @@ interface Strategy {
 
     fun insurance(hand: Hand): Boolean
     fun equalPayment(): Boolean
-    fun initialBet(): Double
+    fun initialBet(): Int
     fun nextMove(hand: Hand, dealerCard: Card): Decision
 
     fun cardDealt(card: Card)  {}

@@ -1,8 +1,8 @@
 package org.alc.blackjack.model
 
 interface Table {
-    val minBet: Double
-    val maxBet: Double
+    val minBet: Int
+    val maxBet: Int
     val rule: TableRule
     val nbDecks: Int
     fun createAccount(initialAmount: Double): Account

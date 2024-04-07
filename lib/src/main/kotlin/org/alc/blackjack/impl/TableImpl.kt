@@ -15,8 +15,8 @@ internal class PlayerHands {
 }
 
 class TableImpl(
-    override val minBet: Double = 1.0,
-    override val maxBet: Double = Int.MAX_VALUE.toDouble(),
+    override val minBet: Int = 1,
+    override val maxBet: Int = Int.MAX_VALUE,
     override val rule: TableRule = TableRule(),
     override val nbDecks: Int = 8,
     gameShoe: GameShoe? = null,
@@ -68,12 +68,12 @@ class TableImpl(
 
     override fun nbPlayers(): Int = playerHands.size
 
-    private fun getInitialBet(player: Player): Double? {
+    private fun getInitialBet(player: Player): Int? {
         val maxRetry = 2
         var retry = 0
         while (retry <= maxRetry) {
             val initialBet = player.initialBet()
-            if (initialBet <= 0.0) return null
+            if (initialBet <= 0) return null
             if (initialBet < minBet || initialBet > maxBet)
                 logger.error("invalid bet: $initialBet, not between $minBet and $maxBet")
             else if (initialBet > player.balance())
@@ -92,7 +92,7 @@ class TableImpl(
             when (val initialBet = getInitialBet(player)) {
                 null -> logger.info("Player is leaving table")
                 else -> {
-                    player.withdraw(initialBet)
+                    player.withdraw(initialBet.toDouble())
                     val h = HandImpl(initialBet)
                     ph.totalHands = 1
                     ph.hands.add(h)
@@ -146,7 +146,7 @@ class TableImpl(
 
     private fun recordPush(player: Player, hand: Hand) {
         logger.info("Push")
-        player.deposit(hand.totalBet())
+        player.deposit(hand.totalBet().toDouble())
         if (hand.insurance() > 0.0)
             player.recordLoss(hand.insurance())
         else
@@ -218,7 +218,7 @@ class TableImpl(
 
     private fun playerDoubles(player: Player, hand: HandImpl) {
         logger.info("Player double for one card")
-        player.withdraw(hand.initialBet)
+        player.withdraw(hand.initialBet.toDouble())
         hand.doubleBet()
         drawOneCardAndGetScore(hand, player)
         logger.info("Player total is ${hand.score()}")
@@ -231,7 +231,7 @@ class TableImpl(
         val canBeHit = !isAce || rule.allowHitSplitAces
 
         ph.hands.removeAt(pos)
-        player.withdraw(hand.initialBet)
+        player.withdraw(hand.initialBet.toDouble())
         val h1 = HandImpl(
             initialBet = hand.initialBet,
             canBeSplit = canBeSplit,
@@ -367,7 +367,7 @@ class TableImpl(
         playerHands.keys.forEach { it.dealerCardVisible(hiddenDealerCard) }
 
         val dealerHand = HandImpl(
-            initialBet = 0.0,
+            initialBet = 0,
             canBeSplit = false,
             isFromSplit = false
         )
@@ -386,10 +386,10 @@ class TableImpl(
         if (_gameShoe.nbRemainingCards() <= lastCardMarker) initGameShoe()
         dealOneCardToEachPlayer()
         val visibleDealerCard = drawCard()
-        dealOneCardToEachPlayer()
-        val hiddenDealerCard = drawCard(visible = false)
         playerHands.keys.forEach { it.dealerReceived(visibleDealerCard) }
         logger.info("Dealer's visible card is $visibleDealerCard")
+        dealOneCardToEachPlayer()
+        val hiddenDealerCard = drawCard(visible = false)
 
         // handle potential dealer black jack
         if (visibleDealerCard.rank == Rank.ACE) {
