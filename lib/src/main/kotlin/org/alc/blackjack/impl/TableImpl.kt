@@ -2,8 +2,11 @@ package org.alc.blackjack.impl
 
 import mu.KotlinLogging
 import org.alc.blackjack.model.*
-import org.alc.card.impl.*
-import org.alc.card.model.*
+import org.alc.card.impl.DefaultGameShoeImpl
+import org.alc.card.impl.RandomShuffler
+import org.alc.card.model.Card
+import org.alc.card.model.GameShoe
+import org.alc.card.model.Rank
 import java.security.SecureRandom
 import java.util.*
 
@@ -146,7 +149,7 @@ class TableImpl(
 
     private fun recordPush(player: Player, hand: Hand) {
         logger.info("Push")
-        player.deposit(hand.totalBet().toDouble())
+        player.deposit(hand.netBet().toDouble())
         if (hand.insurance() > 0.0)
             player.recordLoss(hand.insurance())
         else
@@ -156,17 +159,21 @@ class TableImpl(
     private fun recordWin(player: Player, hand: Hand, factor: Double) {
         val rawAmountWon = hand.totalBet() * factor
         logger.info("Player won $rawAmountWon")
-        player.deposit(hand.totalBet() + rawAmountWon)
+        player.deposit(hand.netBet() + rawAmountWon)
         player.recordWin(rawAmountWon - hand.insurance())
     }
 
     private fun recordLoss(player: Player, hand: Hand) {
         val netLoss = if (hand.surrendered())
-            hand.totalBet() / 2.0
+            hand.netBet() / 2.0
         else
-            hand.totalBet() + hand.insurance()
-        logger.info("Player loss $netLoss")
-        player.recordLoss(netLoss)
+            hand.netBet() + hand.insurance()
+        if (netLoss > 0.0) {
+            logger.info("Player lost $netLoss")
+            player.recordLoss(netLoss)
+        } else {
+            logger.info("Player lost a FREE hand")
+        }
     }
 
     private fun handleDealerBlackJack(dealerHand: Hand) {
@@ -208,8 +215,12 @@ class TableImpl(
         return score
     }
 
-    private fun canSplit(player: Player, hand: Hand) = hand.canBeSplit() && player.balance() >= hand.initialBet
-    private fun canDouble(player: Player, hand: Hand) = hand.canBeDoubled(rule) && player.balance() >= hand.initialBet
+    private fun canSplit(player: Player, hand: Hand) =
+        hand.canBeSplit() && (player.balance() >= hand.initialBet || rule.allowFreeSplit)
+
+    private fun canDouble(player: Player, hand: Hand) = hand.canBeDoubled(rule)
+            && (player.balance() >= hand.initialBet || rule.allowFreeDouble)
+
     private fun canSurrender(hand: Hand) = rule.allowSurrender && hand.canSurrender()
 
     private fun playerStands(@Suppress("UNUSED_PARAMETER") player: Player, hand: Hand) {
@@ -218,8 +229,12 @@ class TableImpl(
 
     private fun playerDoubles(player: Player, hand: HandImpl) {
         logger.info("Player double for one card")
-        player.withdraw(hand.initialBet.toDouble())
-        hand.doubleBet()
+        if (hand.canBeFreelyDoubled(rule)) {
+            hand.doubleBet(free = true)
+        } else {
+            player.withdraw(hand.initialBet.toDouble())
+            hand.doubleBet()
+        }
         drawOneCardAndGetScore(hand, player)
         logger.info("Player total is ${hand.score()}")
     }
@@ -229,20 +244,23 @@ class TableImpl(
         val isAce: Boolean = hand.getCard(0).rank == Rank.ACE
         val canBeSplit = ph.totalHands < rule.maxSplit - 1 && (!isAce || rule.allowMultipleSplitAces)
         val canBeHit = !isAce || rule.allowHitSplitAces
+        val isFreeSplit = rule.allowFreeSplit && hand.score() != 20
 
         ph.hands.removeAt(pos)
-        player.withdraw(hand.initialBet.toDouble())
+        if (!isFreeSplit) player.withdraw(hand.initialBet.toDouble())
         val h1 = HandImpl(
             initialBet = hand.initialBet,
             canBeSplit = canBeSplit,
             canBeHit = canBeHit,
-            isFromSplit = true
+            isFromSplit = true,
+            isFree = hand.isFree
         )
         val h2 = HandImpl(
             initialBet = hand.initialBet,
             canBeSplit = canBeSplit,
             canBeHit = canBeHit,
-            isFromSplit = true
+            isFromSplit = true,
+            isFree = isFreeSplit
         )
         h1.addCard(hand.getCard(0))
         h2.addCard(hand.getCard(1))
@@ -368,8 +386,7 @@ class TableImpl(
 
         val dealerHand = HandImpl(
             initialBet = 0,
-            canBeSplit = false,
-            isFromSplit = false
+            canBeSplit = false
         )
 
         dealerHand.addCard(visibleDealerCard)
@@ -408,7 +425,7 @@ class TableImpl(
 
         playHands(visibleDealerCard)
         val dealerHand = showHiddenCard(hiddenDealerCard, visibleDealerCard)
-        if (playerHands.values.any { it.hands.isNotEmpty()}) dealerPlay(dealerHand)
+        if (playerHands.values.any { it.hands.isNotEmpty() }) dealerPlay(dealerHand)
         playerHands.keys.forEach { it.finalDealerHand(dealerHand) }
         payWinningHands(dealerHand)
         return true

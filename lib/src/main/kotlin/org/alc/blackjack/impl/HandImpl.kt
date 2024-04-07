@@ -10,7 +10,8 @@ internal class HandImpl(
     override val initialBet: Int,
     override val isFromSplit: Boolean = false,
     override val canBeHit: Boolean = true,
-    private val canBeSplit: Boolean = true
+    private val canBeSplit: Boolean = true,
+    override val isFree: Boolean = false
 ) : Hand {
     private var _score = 0
     private val cards = ArrayList<Card>()
@@ -19,9 +20,11 @@ internal class HandImpl(
     private var _totalBet = initialBet
     internal var equalPayment: Boolean = false
     private var _surrendered = false
+    private var freeDouble: Boolean = false
 
-    internal fun doubleBet() {
+    internal fun doubleBet(free: Boolean = false) {
         _totalBet *= 2
+        if(free) freeDouble = true
     }
 
     internal fun surrender() {
@@ -55,7 +58,7 @@ internal class HandImpl(
     override fun nbCards() = cards.size
 
     override fun score() = if (_soft && _score <= 11) _score + 10 else _score
-
+    override fun isFreeDoubled() = freeDouble
     override fun isSoft() = _soft
     override fun insurance() = _insurance
     override fun totalBet() = _totalBet

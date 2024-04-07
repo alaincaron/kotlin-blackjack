@@ -5,6 +5,7 @@ import org.alc.card.model.Card
 interface Hand {
     val isFromSplit: Boolean
     val canBeHit: Boolean
+    val isFree: Boolean
     fun addCard(c: Card)
     fun nbCards(): Int
     fun score(): Int
@@ -20,6 +21,14 @@ interface Hand {
     fun canBeDoubled(rule: TableRule): Boolean
     fun getCard(idx: Int): Card
     fun canSurrender(): Boolean = nbCards() == 2 && !isFromSplit
-    fun canBeFreelySplit(rule: TableRule) = rule.allowFreeSplit && getCard(0).value != 10 && canBeSplit()
+    fun canBeFreelySplit(rule: TableRule) = rule.allowFreeSplit && score() != 20 && canBeSplit()
     fun canBeFreelyDoubled(rule:TableRule) = rule.allowFreeDouble && canBeDoubled(rule) && !isSoft() && score() in 9..11
+    fun isFreeDoubled(): Boolean
+
+    fun netBet(): Int {
+        var netBet = if (isFree) 0 else initialBet
+        if (!isFreeDoubled()) netBet += (totalBet() - initialBet)
+        return netBet
+    }
+
 }

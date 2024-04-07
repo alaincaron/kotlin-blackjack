@@ -12,8 +12,8 @@ import kotlin.test.*
 class TableImplTest {
 
     private val initialAmount = 1000.0
-    private val minBet = 10.0
-    private val maxBet = 100.0
+    private val minBet = 10
+    private val maxBet = 100
     private val nbDecks = 8
 
     @RelaxedMockK
@@ -109,7 +109,7 @@ class TableImplTest {
 
         table.newRound()
 
-        verify { strategy.recordLoss(minBet) }
+        verify { strategy.recordLoss(minBet.toDouble()) }
         assert(account.balance() == initialAmount - minBet)
         verify { strategy.dealerCardVisible(dealerCard) }
         verify { strategy.finalHand(handMatch(playerCards)) }
@@ -136,7 +136,7 @@ class TableImplTest {
         table.newRound()
 
         verify { strategy.dealerCardVisible(dealerCards[1])}
-        verify { strategy.recordWin(minBet) }
+        verify { strategy.recordWin(minBet.toDouble()) }
         assert(account.balance() == initialAmount + minBet)
         playerCards.add(cards[4])
         verify { strategy.finalHand(handMatch(playerCards))}
@@ -174,7 +174,7 @@ class TableImplTest {
 
         table.newRound()
 
-        verify { strategy.recordWin(minBet) }
+        verify { strategy.recordWin(minBet.toDouble()) }
         assertEquals(initialAmount + minBet, account.balance())
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
     }
@@ -192,7 +192,7 @@ class TableImplTest {
 
         table.newRound()
 
-        verify { strategy.recordWin(minBet) }
+        verify { strategy.recordWin(minBet.toDouble()) }
         assertEquals(initialAmount + minBet, account.balance())
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
     }
@@ -238,8 +238,8 @@ class TableImplTest {
 
         table.newRound()
 
-        verify { strategy.recordWin(minBet) }
-        verify { strategy.recordLoss(minBet) }
+        verify { strategy.recordWin(minBet.toDouble()) }
+        verify { strategy.recordLoss(minBet.toDouble()) }
         assertEquals(initialAmount, account.balance())
         verify { strategy.finalHand(handMatch(playerFirstHandCards)) }
         verify { strategy.finalHand(handMatch(playerSecondHandCards)) }
@@ -269,7 +269,7 @@ class TableImplTest {
         table.newRound()
 
         verify { strategy.recordWin(minBet * 2.0) }
-        verify { strategy.recordLoss(minBet) }
+        verify { strategy.recordLoss(minBet.toDouble()) }
         assertEquals(initialAmount + minBet, account.balance())
         verify(exactly = 2) { strategy.finalHand(any()) }
         verify { strategy.finalDealerHand(any()) }
@@ -310,7 +310,7 @@ class TableImplTest {
 
         table.newRound()
 
-        verify { strategy.recordLoss(minBet) }
+        verify { strategy.recordLoss(minBet.toDouble()) }
         assertEquals(initialAmount - minBet, account.balance())
         verify { strategy.dealerReceived(Card.six.spades) }
         verify { strategy.dealerCardVisible(Card.ace.diamonds) }

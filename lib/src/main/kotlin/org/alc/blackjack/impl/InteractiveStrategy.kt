@@ -146,4 +146,6 @@ open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
         super.recordLoss(amount)
         println("Player lost $amount")
     }
+
+
 }

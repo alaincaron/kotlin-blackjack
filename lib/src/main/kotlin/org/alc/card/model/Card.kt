@@ -37,5 +37,5 @@ class Card private constructor(val rank: Rank, val suit: Suit) {
     }
 
     override fun toString() = "$rank of $suit"
-    val value get() = rank.value()
+    val value get() = rank.value
 }

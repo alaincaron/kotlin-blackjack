@@ -1,24 +1,26 @@
 package org.alc.blackjack.impl
 
-import org.alc.blackjack.model.Hand
 import org.alc.blackjack.model.TableRule
 import org.alc.card.model.Card
 import org.alc.card.model.Rank
 import org.alc.card.model.Suit
 import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 class HandImplTest {
 
     private fun createHand(
         canBeSplit: Boolean = true,
         canBeHit: Boolean = true,
-        isFromSplit: Boolean = false
+        isFromSplit: Boolean = false,
+        isFree: Boolean = false
     ) =
         HandImpl(
-            initialBet = 1.0,
+            initialBet = 1,
             canBeSplit = canBeSplit,
             canBeHit = canBeHit,
-            isFromSplit = isFromSplit
+            isFromSplit = isFromSplit,
+            isFree = isFree
         )
 
     @Test
@@ -27,6 +29,56 @@ class HandImplTest {
         hand.addCard(Card.four.clubs)
         hand.addCard(Card.seven.spades)
         assert(!hand.canBeDoubled(TableRule.DEFAULT))
+    }
+
+    @Test fun `should compute net bet on paying hand doubled for free`() {
+        val hand = createHand(isFree = false)
+        assertEquals(1, hand.initialBet)
+        assertEquals(1, hand.totalBet())
+        assertEquals(1, hand.netBet())
+
+        hand.doubleBet(free = true)
+        assertEquals(1, hand.initialBet)
+        assertEquals(2, hand.totalBet())
+        assertEquals(1, hand.netBet())
+    }
+
+
+    @Test fun `should compute net bet on free hand doubled for free`() {
+        val hand = createHand(isFree = true)
+        assertEquals(1, hand.initialBet)
+        assertEquals(1, hand.totalBet())
+        assertEquals(0, hand.netBet())
+
+        hand.doubleBet(free = true)
+        assertEquals(1, hand.initialBet)
+        assertEquals(2, hand.totalBet())
+        assertEquals(0, hand.netBet())
+    }
+
+    @Test fun `should compute net bet on paying hand doubled with own money`() {
+        val hand = createHand(isFree = false)
+        assertEquals(1, hand.initialBet)
+        assertEquals(1, hand.totalBet())
+        assertEquals(1, hand.netBet())
+
+        hand.doubleBet(free = false)
+        assertEquals(1, hand.initialBet)
+        assertEquals(2, hand.totalBet())
+        assertEquals(2, hand.netBet())
+    }
+
+
+    @Test fun `should compute net bet on free hand doubled with own money`() {
+        val hand = createHand(isFree = true)
+        assertEquals(1, hand.initialBet)
+        assertEquals(0, hand.netBet())
+        assertEquals(1, hand.totalBet())
+
+        hand.doubleBet(free = false)
+        assertEquals(1, hand.initialBet)
+        assertEquals(2, hand.totalBet())
+        assertEquals(1, hand.netBet())
     }
 
     @Test

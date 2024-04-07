@@ -1,11 +1,13 @@
 package org.alc.blackjack.impl
 
 import org.alc.blackjack.model.Account
+import org.alc.blackjack.model.Hand
 import org.alc.blackjack.model.Strategy
 import org.alc.blackjack.model.Table
+import org.alc.card.model.Card
 import kotlin.math.max
 
-abstract class AbstractStrategy(override val account: Account) : Strategy {
+abstract class AbstractStrategy(final override val account: Account) : Strategy {
     private var _nbPush = 0
     private var _nbWin = 0
     private var _nbLoss = 0
@@ -38,7 +40,7 @@ abstract class AbstractStrategy(override val account: Account) : Strategy {
         amountWon += amount
     }
 
-    override fun recordLoss(amount: Double){
+    override fun recordLoss(amount: Double) {
         _nbLoss += 1
         amountLoss += amount
     }
@@ -47,5 +49,9 @@ abstract class AbstractStrategy(override val account: Account) : Strategy {
     override fun nbLoss() = _nbLoss
     override fun avgWin() = amountWon / max(1, _nbWin)
     override fun avgLoss() = amountLoss / max(1, _nbLoss)
-
+    override fun received(card: Card) {}
+    override fun dealerReceived(card: Card) {}
+    override fun dealerCardVisible(card: Card) {}
+    override fun finalHand(hand: Hand) {}
+    override fun finalDealerHand(hand: Hand) {}
 }
