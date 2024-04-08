@@ -30,5 +30,4 @@ interface Hand {
         if (!isFreeDoubled()) netBet += (totalBet() - initialBet)
         return netBet
     }
-
 }

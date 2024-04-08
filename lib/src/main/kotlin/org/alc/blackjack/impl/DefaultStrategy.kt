@@ -5,7 +5,7 @@ import org.alc.card.model.Card
 
 abstract class DefaultStrategy(account: Account, gainFactor: Double? =null):AbstractStrategy(account) {
     private val initialBalance: Double = account.balance()
-    protected val upperBound: Double = (1 + (gainFactor ?: 1.0)) * initialBalance
+    private val upperBound: Double = (1 + (gainFactor ?: 1.0)) * initialBalance
 
     override fun insurance(hand: Hand) = false
     override fun equalPayment() = table().rule.blackjackPayFactor < 1.5

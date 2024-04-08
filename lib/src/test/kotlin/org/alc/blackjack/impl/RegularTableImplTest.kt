@@ -1,71 +1,12 @@
 package org.alc.blackjack.impl
 
 import io.mockk.*
-import io.mockk.impl.annotations.*
 import org.alc.blackjack.model.*
 import org.alc.card.model.*
-import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Test
-import java.util.*
 import kotlin.test.*
 
-class TableImplTest {
-
-    private val initialAmount = 1000.0
-    private val minBet = 10
-    private val maxBet = 100
-    private val nbDecks = 8
-
-    @RelaxedMockK
-    lateinit var shoe: GameShoe
-
-    @RelaxedMockK
-    lateinit var random: Random
-
-    @RelaxedMockK
-    lateinit var strategy: Strategy
-
-    private lateinit var account: Account
-    private lateinit var player: Player
-    private lateinit var table: Table
-
-    @BeforeEach
-    fun setUp() {
-        MockKAnnotations.init(this)
-    }
-
-    @AfterEach
-    fun tearDown() {
-        unmockkAll()
-    }
-
-    private fun initTable(dealerHitsOnSoft17: Boolean = true, blackjackPayFactor: Double = 1.5) {
-        account = AccountImpl(initialAmount)
-        every { strategy.account } returns account
-        player = Player(strategy)
-        val rule = TableRule(
-            dealerHitsOnSoft17 = dealerHitsOnSoft17,
-            blackjackPayFactor = blackjackPayFactor
-        )
-        table = TableImpl(
-            minBet = minBet,
-            maxBet = maxBet,
-            rule,
-            nbDecks = nbDecks,
-            gameShoe = shoe,
-            random = random
-        )
-        table.addPlayer(player)
-    }
-
-    private fun prepareShoe(vararg cards: Card) {
-        every { shoe.dealCard() } returnsMany listOf(
-            Card.two.spades, // throw-away card
-            *cards
-        )
-        every { strategy.initialBet() } returns minBet
-
-    }
+class RegularTableImplTest: TableImplTestHelper(TableRule.DEFAULT) {
 
     @Test
     fun `should offer insurance on visible ace and payback insurance if blackjack`() {
@@ -84,7 +25,7 @@ class TableImplTest {
         table.newRound()
 
         verify { strategy.recordPush() }
-        assert(account.balance() == initialAmount)
+        assertEquals(initialAmount, account.balance())
         verify { strategy.dealerCardVisible(cards[3]) }
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
         verify { strategy.finalDealerHand(handMatch(dealerCards)) }
@@ -110,7 +51,7 @@ class TableImplTest {
         table.newRound()
 
         verify { strategy.recordLoss(minBet.toDouble()) }
-        assert(account.balance() == initialAmount - minBet)
+        assertEquals(initialAmount - minBet, account.balance())
         verify { strategy.dealerCardVisible(dealerCard) }
         verify { strategy.finalHand(handMatch(playerCards)) }
         verify { strategy.finalDealerHand(handMatch(dealerCards)) }
@@ -137,7 +78,7 @@ class TableImplTest {
 
         verify { strategy.dealerCardVisible(dealerCards[1])}
         verify { strategy.recordWin(minBet.toDouble()) }
-        assert(account.balance() == initialAmount + minBet)
+        assertEquals(initialAmount + minBet, account.balance())
         playerCards.add(cards[4])
         verify { strategy.finalHand(handMatch(playerCards))}
         verify { strategy.finalDealerHand(handMatch(dealerCards))}
@@ -157,7 +98,7 @@ class TableImplTest {
         table.newRound()
 
         verify { strategy.recordPush() }
-        assert(account.balance() == initialAmount)
+        assertEquals(initialAmount, account.balance())
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
     }
 
@@ -277,7 +218,7 @@ class TableImplTest {
 
     @Test
     fun `should stand on soft 17 if dealHitsOnSoft17 rule is not enabled`() {
-        initTable(dealerHitsOnSoft17 = false)
+        initTable(TableRule.DEFAULT.copy(dealerHitsOnSoft17 = false))
         prepareShoe(
             Card.eight.spades,   // player 1st card
             Card.six.spades,   // dealer visible card

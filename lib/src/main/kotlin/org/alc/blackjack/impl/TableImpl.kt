@@ -20,7 +20,7 @@ internal class PlayerHands {
 class TableImpl(
     override val minBet: Int = 1,
     override val maxBet: Int = Int.MAX_VALUE,
-    override val rule: TableRule = TableRule(),
+    override val rule: TableRule = TableRule.DEFAULT,
     override val nbDecks: Int = 8,
     gameShoe: GameShoe? = null,
     random: Random? = null
@@ -170,10 +170,10 @@ class TableImpl(
             hand.netBet() + hand.insurance()
         if (netLoss > 0.0) {
             logger.info("Player lost $netLoss")
-            player.recordLoss(netLoss)
         } else {
             logger.info("Player lost a FREE hand")
         }
+        player.recordLoss(netLoss)
     }
 
     private fun handleDealerBlackJack(dealerHand: Hand) {
@@ -283,7 +283,7 @@ class TableImpl(
             Decision.DOUBLE -> if (canDouble(player, hand)) return decision
             Decision.SPLIT -> if (canSplit(player, hand)) return decision
         }
-        logger.warn("Illegal decision: $decision")
+        logger.warn("Illegal decision: $decision hand=$hand")
         if (retryCount >= 2) {
             logger.warn("Too many illegal decisions.  Reverting to STAND")
             return Decision.STAND

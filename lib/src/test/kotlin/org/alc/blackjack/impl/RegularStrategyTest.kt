@@ -1,16 +1,12 @@
 package org.alc.blackjack.impl
 
-import io.mockk.MockKAnnotations
 import io.mockk.every
-import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.unmockkAll
-import org.alc.blackjack.model.*
+import org.alc.blackjack.model.Decision
+import org.alc.blackjack.model.TableRule
 import org.alc.card.model.Card
 import org.alc.card.model.Rank
 import org.alc.card.model.Suit
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class RegularStrategyTest : AbstractStrategyTestHelper() {

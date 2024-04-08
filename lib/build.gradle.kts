@@ -11,6 +11,7 @@ plugins {
 
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
+
 }
 
 repositories {
@@ -34,7 +35,7 @@ dependencies {
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation(libs.guava)
 
-    implementation ("io.github.microutils:kotlin-logging-jvm:2.0.11")
+    implementation ("io.github.microutils:kotlin-logging-jvm:3.0.5")
     implementation(group= "ch.qos.logback", name="logback-classic", version="1.4.14")
 }
 
@@ -48,4 +49,21 @@ java {
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+
+    testLogging {
+        events("failed")
+    }
+}
+
+task<JavaExec>("blackjack") {
+    mainClass = "org.alc.blackjack.impl.InteractiveBlackjackKt"
+    classpath = java.sourceSets["main"].runtimeClasspath
+    standardInput = System.`in`
+}
+
+task<JavaExec>("freebet") {
+    mainClass = "org.alc.blackjack.impl.InteractiveFreeBetKt"
+    classpath = java.sourceSets["main"].runtimeClasspath
+    standardInput = System.`in`
+
 }

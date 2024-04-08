@@ -4,6 +4,8 @@ import org.alc.blackjack.model.TableRule
 import org.alc.card.model.Card
 import org.alc.card.model.Rank
 import org.alc.card.model.Suit
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -28,7 +30,7 @@ class HandImplTest {
         val hand = createHand(canBeHit = false)
         hand.addCard(Card.four.clubs)
         hand.addCard(Card.seven.spades)
-        assert(!hand.canBeDoubled(TableRule.DEFAULT))
+        assertFalse(hand.canBeDoubled(TableRule.DEFAULT))
     }
 
     @Test fun `should compute net bet on paying hand doubled for free`() {
@@ -86,7 +88,7 @@ class HandImplTest {
         val hand = createHand()
         hand.addCard(Card.four.clubs)
         hand.addCard(Card.seven.spades)
-        assert(hand.canBeDoubled(TableRule.DEFAULT))
+        assertTrue(hand.canBeDoubled(TableRule.DEFAULT))
     }
 
     @Test
@@ -95,7 +97,7 @@ class HandImplTest {
         hand.addCard(Card.four.clubs)
         hand.addCard(Card.two.spades)
         hand.addCard(Card.five.hearts)
-        assert(!hand.canBeDoubled(TableRule.DEFAULT))
+        assertFalse(hand.canBeDoubled(TableRule.DEFAULT))
     }
 
     @Test
@@ -104,7 +106,7 @@ class HandImplTest {
         hand.addCard(Card.four.clubs)
         hand.addCard(Card.two.spades)
         hand.addCard(Card.five.hearts)
-        assert(hand.canBeDoubled(TableRule.DEFAULT.copy(allowDoubleAnytime = true)))
+        assertTrue(hand.canBeDoubled(TableRule.DEFAULT.copy(allowDoubleAnytime = true)))
     }
 
     @Test
@@ -112,7 +114,7 @@ class HandImplTest {
         val hand = createHand(canBeSplit = false)
         hand.addCard(Card.four.clubs)
         hand.addCard(Card.four.spades)
-        assert(!hand.canBeSplit())
+        assertFalse(hand.canBeSplit())
     }
 
     @Test
@@ -120,7 +122,7 @@ class HandImplTest {
         val hand = createHand()
         hand.addCard(Card.ace.clubs)
         hand.addCard(Card.ace.spades)
-        assert(hand.canBeSplit())
+        assertTrue(hand.canBeSplit())
     }
 
     @Test
@@ -128,7 +130,7 @@ class HandImplTest {
         val hand = createHand()
         hand.addCard(Card.four.clubs)
         hand.addCard(Card.four.spades)
-        assert(hand.canBeSplit())
+        assertTrue(hand.canBeSplit())
     }
 
     @Test
@@ -136,7 +138,7 @@ class HandImplTest {
         val hand = createHand()
         hand.addCard(Card.king.clubs)
         hand.addCard(Card.jack.spades)
-        assert(hand.canBeSplit())
+        assertTrue(hand.canBeSplit())
     }
 
     @Test
@@ -144,7 +146,7 @@ class HandImplTest {
         val hand = createHand()
         hand.addCard(Card.king.clubs)
         hand.addCard(Card.five.spades)
-        assert(!hand.canBeSplit())
+        assertFalse(hand.canBeSplit())
     }
 
     @Test
@@ -153,7 +155,7 @@ class HandImplTest {
         hand.addCard(Card.four.clubs)
         hand.addCard(Card.four.spades)
         hand.addCard(Card.four.hearts)
-        assert(!hand.canBeSplit())
+        assertFalse(hand.canBeSplit())
     }
 
     @Test
@@ -168,7 +170,7 @@ class HandImplTest {
                 h.addCard(c2)
                 val total = c1.value + c2.value
                 val canBeFreelyDoubled = !h.isSoft() && (total in 9..11)
-                assert(h.canBeFreelyDoubled(rule) == canBeFreelyDoubled) { "canBeFreelyDoubled failed for $r1 and $r2" }
+                assertTrue(h.canBeFreelyDoubled(rule) == canBeFreelyDoubled) { "canBeFreelyDoubled failed for $r1 and $r2" }
             }
         }
     }
@@ -185,7 +187,7 @@ class HandImplTest {
                 h.addCard(c2)
                 val value = c1.value
                 val splittable = value != 10  && value == c2.value
-                assert(h.canBeFreelySplit(rule) == splittable) { "isFreeSplittable failed for $r1 and $r2" }
+                assertTrue(h.canBeFreelySplit(rule) == splittable) { "isFreeSplittable failed for $r1 and $r2" }
             }
         }
     }

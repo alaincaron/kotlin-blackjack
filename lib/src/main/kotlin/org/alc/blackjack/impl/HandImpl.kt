@@ -63,6 +63,10 @@ internal class HandImpl(
     override fun insurance() = _insurance
     override fun totalBet() = _totalBet
     override fun surrendered() = _surrendered
+
+    override fun toString() =
+         "HandImpl(initialBet=$initialBet, cards=$cards, isFromSplit=$isFromSplit, canBeHit=$canBeHit, canBeSplit=$canBeSplit, isFree=$isFree, _score=$_score, _soft=$_soft, _insurance=$_insurance, _totalBet=$_totalBet, equalPayment=$equalPayment, _surrendered=$_surrendered, freeDouble=$freeDouble)"
+
 }
 
 
