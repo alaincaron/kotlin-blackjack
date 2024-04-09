@@ -169,7 +169,8 @@ class HandImplTest {
                 h.addCard(c1)
                 h.addCard(c2)
                 val total = c1.value + c2.value
-                val canBeFreelyDoubled = !h.isSoft() && (total in 9..11)
+                val isSoft = c1.value == 11 || c2.value == 11
+                val canBeFreelyDoubled = !isSoft && (total in 9..11)
                 assertTrue(h.canBeFreelyDoubled(rule) == canBeFreelyDoubled) { "canBeFreelyDoubled failed for $r1 and $r2" }
             }
         }

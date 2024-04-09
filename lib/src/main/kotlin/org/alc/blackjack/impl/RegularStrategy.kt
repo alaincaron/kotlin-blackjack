@@ -5,49 +5,47 @@ import org.alc.blackjack.model.Decision
 import org.alc.blackjack.model.Hand
 import org.alc.blackjack.model.Table
 import org.alc.card.model.Card
-import org.alc.card.model.Rank
-import kotlin.random.Random
 
 open class RegularStrategy(account: Account, gainFactor: Double? = null) : DefaultStrategy(account, gainFactor) {
 
     private fun canSplit(hand: Hand) = hand.canBeSplit() && account.balance() >= hand.initialBet
     private fun canDouble(hand: Hand) = hand.canBeDoubled(table().rule) && account.balance() >= hand.initialBet
 
-    override fun shouldSplit(hand: Hand, dealerCard: Card, table: Table): Boolean {
+    override fun shouldSplit(hand: Hand, dealerCard: Card): Boolean {
         if (!canSplit(hand)) return false
         if (hand.isSoft()) return true
-        val splitTable = if (table.rule.dealerHitsOnSoft17) splitTableH else splitTableS
+        val rule = table().rule
+        val splitTable = if (rule.dealerHitsOnSoft17) splitTableH else splitTableS
         val idx = (hand.score() / 2) - 2
-        val code = splitTable[idx][pos(dealerCard)]
-        return code == 'Y' || (code == 'p' && !table.rule.allowSurrender)
+        val code = splitTable[idx][dealerCard.value -2]
+        return code == 'Y' || (code == 'p' && !rule.allowSurrender)
     }
 
-    override fun softDecision(hand: Hand, dealerCard: Card, table: Table): Decision {
-        val softTable = if (table.rule.dealerHitsOnSoft17) softTableH else softTableS
-        return toDecision(softTable[hand.score() - 12][pos(dealerCard)], hand, table)
+    override fun softDecision(hand: Hand, dealerCard: Card): Decision {
+        val softTable = if (table().rule.dealerHitsOnSoft17) softTableH else softTableS
+        return toDecision(softTable[hand.score() - 12][dealerCard.value - 2], hand)
     }
 
-    override fun hardDecision(hand: Hand, dealerCard: Card, table: Table): Decision {
+    override fun hardDecision(hand: Hand, dealerCard: Card): Decision {
         val score = hand.score()
         if (score > 17) return Decision.STAND
         if (score <= 8) return Decision.HIT
-        val hardTable = if (table.rule.dealerHitsOnSoft17) hardTableH else hardTableS
-        return toDecision(hardTable[score - 9][pos(dealerCard)], hand, table)
+        val hardTable = if (table().rule.dealerHitsOnSoft17) hardTableH else hardTableS
+        return toDecision(hardTable[score - 9][dealerCard.value -2], hand)
     }
 
-    private fun toDecision(c: Char, hand: Hand, table: Table): Decision = when (c) {
+    private fun toDecision(c: Char, hand: Hand): Decision = when (c) {
         'H' -> Decision.HIT
         'S' -> Decision.STAND
         'D' -> if (canDouble(hand)) Decision.DOUBLE else Decision.HIT
         'd' -> if (canDouble(hand)) Decision.DOUBLE else Decision.STAND
-        'R' -> if (table.rule.allowSurrender) Decision.SURRENDER else Decision.HIT
-        'r' -> if (table.rule.allowSurrender) Decision.SURRENDER else Decision.STAND
+        'R' -> if (table().rule.allowSurrender) Decision.SURRENDER else Decision.HIT
+        'r' -> if (table().rule.allowSurrender) Decision.SURRENDER else Decision.STAND
         else -> throw IllegalArgumentException("Invalid decision code: $c")
     }
 
     @Suppress("SpellCheckingInspection")
     companion object {
-        private fun pos(card: Card) = if (card.rank == Rank.ACE) 9 else card.value - 2
 
         //
         // H: HIT

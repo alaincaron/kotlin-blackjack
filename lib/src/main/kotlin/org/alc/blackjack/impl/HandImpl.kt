@@ -49,8 +49,9 @@ internal class HandImpl(
 
     override fun addCard(c: Card) {
         cards.add(c)
-        _score += c.value
-        if (c.rank == Rank.ACE || _soft) {
+        val value = c.value
+        _score += if (value == 11) 1 else value
+        if (value == 11 || _soft) {
             _soft = _score <= 11
         }
     }

@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 
 class RegularStrategyTest : AbstractStrategyTestHelper() {
 
-    protected override fun createStrategy(gainFactor: Double) = RegularStrategy(account, gainFactor)
+    override fun createStrategy(gainFactor: Double) = RegularStrategy(account, gainFactor)
 
     @Test
     fun `should always refuse insurance`() {
@@ -81,7 +81,7 @@ class RegularStrategyTest : AbstractStrategyTestHelper() {
         for (dealerRank in Rank.entries) {
             val dealerCard = Card(dealerRank, Suit.SPADES)
             when (dealerCard.value) {
-                1, 10 -> assertHit(hand, dealerCard)
+                10,11 -> assertHit(hand, dealerCard)
                 else -> assertDouble(hand, dealerCard)
             }
         }

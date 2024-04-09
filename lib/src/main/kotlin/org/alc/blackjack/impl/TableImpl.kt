@@ -417,7 +417,7 @@ class TableImpl(
                 handleDealerBlackJack(dealerHand)
                 return true
             }
-        } else if (visibleDealerCard.value == 10 && hiddenDealerCard.rank == Rank.ACE) {
+        } else if (visibleDealerCard.value == 10 && hiddenDealerCard.value == 11) {
             val dealerHand = showHiddenCard(hiddenDealerCard, visibleDealerCard)
             handleDealerBlackJack(dealerHand)
             return true
