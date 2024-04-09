@@ -25,6 +25,8 @@ interface Hand {
     fun canBeFreelyDoubled(rule:TableRule) = rule.allowFreeDouble && canBeDoubled(rule) && !isSoft() && score() in 9..11
     fun isFreeDoubled(): Boolean
 
+    fun canBeHit() = canBeHit && totalBet() == initialBet
+
     fun netBet(): Int {
         var netBet = if (isFree) 0 else initialBet
         if (!isFreeDoubled()) netBet += (totalBet() - initialBet)

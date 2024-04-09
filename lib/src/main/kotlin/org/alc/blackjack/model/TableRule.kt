@@ -15,7 +15,8 @@ data class TableRule(
     val pushOn22: Boolean = false,
     val allowDoubleForLess: Boolean = false,
     val insureForLess: Boolean = false,
-    val alwaysPay21: Boolean = false
+    val alwaysPay21: Boolean = false,
+    val bonus21: Boolean = false
 ) {
     companion object {
         val DEFAULT = TableRule()
@@ -28,7 +29,8 @@ data class TableRule(
             allowHitSplitAces = true,
             allowDoubleForLess = true,
             insureForLess = true,
-            alwaysPay21 = true
+            alwaysPay21 = true,
+            bonus21 = true
         )
 
         val FREE_BET = TableRule(

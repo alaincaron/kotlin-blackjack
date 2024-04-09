@@ -18,6 +18,15 @@ class Spanish21Strategy(account: Account, gainFactor: Double? = null) : DefaultS
         return false
     }
 
+    override fun nextMove(hand: Hand, dealerCard: Card) =
+        if (!hand.canBeHit()) {
+            when (hand.score()) {
+                in 12..16 -> if (dealerCard.value >= 8) Decision.SURRENDER else Decision.STAND
+                17 -> if (dealerCard.value == 11) Decision.SURRENDER else Decision.STAND
+                else -> Decision.STAND
+            }
+        } else super.nextMove(hand, dealerCard)
+
     override fun hardDecision(hand: Hand, dealerCard: Card) =
         if (table().rule.dealerHitsOnSoft17) hardDecisionDealerHitOnSoft17(
             hand,
@@ -36,7 +45,7 @@ class Spanish21Strategy(account: Account, gainFactor: Double? = null) : DefaultS
             shouldSplitDealerStandOnSoft17(hand, dealerCard)
                 )
 
-    private fun doubleOrHit(hand: Hand, threshold: Int = Int.MAX_VALUE ): Decision =
+    private fun doubleOrHit(hand: Hand, threshold: Int = Int.MAX_VALUE): Decision =
         if (hand.nbCards() >= threshold || account.balance() < hand.initialBet || !hand.canBeDoubled(table().rule)) Decision.HIT
         else Decision.DOUBLE
 
@@ -65,24 +74,27 @@ class Spanish21Strategy(account: Account, gainFactor: Double? = null) : DefaultS
         in 4..8 -> Decision.HIT
         9 -> if (dealerCard.value == 6) doubleOrHit(hand, 4) else Decision.HIT
         10 -> when (dealerCard.value) {
-            2,3 -> doubleOrHit(hand, 5)
-            4,5,6 -> doubleOrHit(hand)
+            2, 3 -> doubleOrHit(hand, 5)
+            4, 5, 6 -> doubleOrHit(hand)
             7 -> doubleOrHit(hand, 4)
             8 -> doubleOrHit(hand, 3)
             else -> Decision.HIT
         }
+
         11 -> when (dealerCard.value) {
-            2,7,8,9 -> doubleOrHit(hand, 4)
-            3,4,5,6 -> doubleOrHit(hand, 5)
+            2, 7, 8, 9 -> doubleOrHit(hand, 4)
+            3, 4, 5, 6 -> doubleOrHit(hand, 5)
             else -> doubleOrHit(hand, 3)
         }
-        12,13 -> Decision.HIT
+
+        12, 13 -> Decision.HIT
         14 -> when (dealerCard.value) {
-            4,6 -> standOrHit(hand, 4, Sequence21.ANY)
+            4, 6 -> standOrHit(hand, 4, Sequence21.ANY)
             5 -> standOrHit(hand, 5, Sequence21.ANY)
             else -> Decision.HIT
         }
-        15 -> when(dealerCard.value) {
+
+        15 -> when (dealerCard.value) {
             2 -> standOrHit(hand, 4, Sequence21.ANY)
             3 -> standOrHit(hand, 5, Sequence21.ANY)
             4 -> standOrHit(hand, 5, Sequence21.SPADES)
@@ -90,35 +102,40 @@ class Spanish21Strategy(account: Account, gainFactor: Double? = null) : DefaultS
             6 -> standOrHit(hand, 6, Sequence21.SPADES)
             else -> Decision.HIT
         }
+
         16 -> when (dealerCard.value) {
             2 -> standOrHit(hand, 5)
-            3,4 -> standOrHit(hand, 6)
-            5,6 -> Decision.STAND
+            3, 4 -> standOrHit(hand, 6)
+            5, 6 -> Decision.STAND
             else -> Decision.HIT
         }
+
         17 -> when (dealerCard.value) {
             in 2..7 -> Decision.STAND
-            8,9,10 -> standOrHit(hand, 6)
+            8, 9, 10 -> standOrHit(hand, 6)
             else -> if (hand.canSurrender() && table().rule.allowSurrender) Decision.SURRENDER else Decision.HIT
         }
+
         else -> Decision.STAND
     }
 
     private fun softDecisionDealerStandOnSoft17(hand: Hand, dealerCard: Card) = when (hand.score()) {
-        12,13,14,15 -> Decision.HIT
+        12, 13, 14, 15 -> Decision.HIT
         16 -> if (dealerCard.value == 6) doubleOrHit(hand, 4) else Decision.HIT
         17 -> when (dealerCard.value) {
-            4,5,6 -> doubleOrHit(hand, dealerCard.value -1)
+            4, 5, 6 -> doubleOrHit(hand, dealerCard.value - 1)
             else -> Decision.HIT
         }
+
         18 -> when (dealerCard.value) {
-            2,3 -> standOrHit(hand, 4)
-            4 -> doubleOrHit(hand,4)
-            5,6 -> doubleOrHit(hand, 5)
+            2, 3 -> standOrHit(hand, 4)
+            4 -> doubleOrHit(hand, 4)
+            5, 6 -> doubleOrHit(hand, 5)
             7 -> standOrHit(hand, 6)
             8 -> standOrHit(hand, 4)
             else -> Decision.HIT
         }
+
         else -> if (dealerCard.value == 10) standOrHit(hand, 6) else Decision.STAND
     }
 
@@ -132,43 +149,49 @@ class Spanish21Strategy(account: Account, gainFactor: Double? = null) : DefaultS
         in 4..8 -> Decision.HIT
         9 -> if (dealerCard.value == 6) doubleOrHit(hand) else Decision.HIT
         10 -> when (dealerCard.value) {
-            2,3 -> doubleOrHit(hand, 5)
-            4,5,6 -> doubleOrHit(hand)
+            2, 3 -> doubleOrHit(hand, 5)
+            4, 5, 6 -> doubleOrHit(hand)
             7 -> doubleOrHit(hand, 4)
             8 -> doubleOrHit(hand, 3)
             else -> Decision.HIT
         }
+
         11 -> when (dealerCard.value) {
-            2,7,8,9 -> doubleOrHit(hand, 4)
-            3,4,5,6 ->doubleOrHit(hand,5)
+            2, 7, 8, 9 -> doubleOrHit(hand, 4)
+            3, 4, 5, 6 -> doubleOrHit(hand, 5)
             else -> doubleOrHit(hand, 3)
         }
+
         12 -> Decision.HIT
-        13 -> if (dealerCard.value == 6) standOrHit(hand, 4, Sequence21.ANY) else Decision.STAND
-        14 -> when(dealerCard.value) {
+        13 -> if (dealerCard.value == 6) standOrHit(hand, 4, Sequence21.ANY) else Decision.HIT
+        14 -> when (dealerCard.value) {
             4 -> standOrHit(hand, 4, Sequence21.ANY)
             5 -> standOrHit(hand, 5, Sequence21.SUITED)
             6 -> standOrHit(hand, 6, Sequence21.SPADES)
             else -> Decision.HIT
         }
+
         15 -> when (dealerCard.value) {
             2 -> standOrHit(hand, 4, Sequence21.ANY)
             3 -> standOrHit(hand, 5, Sequence21.SUITED)
-            4,5 -> standOrHit(hand, 6)
+            4, 5 -> standOrHit(hand, 6)
             7 -> Decision.STAND
             else -> Decision.HIT
         }
+
         16 -> when (dealerCard.value) {
-            2,3,4 -> standOrHit(hand, 6)
-            5,6 -> Decision.STAND
-            7,8,9,10 -> Decision.HIT
+            2, 3, 4 -> standOrHit(hand, 6)
+            5, 6 -> Decision.STAND
+            7, 8, 9, 10 -> Decision.HIT
             else -> if (hand.canSurrender() && table().rule.allowSurrender) Decision.SURRENDER else Decision.HIT
         }
+
         17 -> when (dealerCard.value) {
             in 2..7 -> Decision.STAND
-            8,9,10 -> standOrHit(hand, 6)
+            8, 9, 10 -> standOrHit(hand, 6)
             else -> if (hand.canSurrender() && table().rule.allowSurrender) Decision.SURRENDER else Decision.HIT
         }
+
         else -> Decision.STAND
     }
 

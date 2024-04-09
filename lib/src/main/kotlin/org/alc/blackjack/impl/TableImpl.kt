@@ -131,7 +131,7 @@ class TableImpl(
         playerHands.forEach { (player, ph) ->
             ph.hands.forEach { hand ->
                 if (hand.isBlackJack()) {
-                    hand.equalPayment = player.equalPayment()
+                    if (!rule.alwaysPay21) hand.equalPayment = player.equalPayment()
                 } else if (player.insurance(hand)) {
                     val insuranceAmount = hand.initialBet * 0.5
                     if (insuranceAmount > player.balance()) {
@@ -165,7 +165,10 @@ class TableImpl(
 
     private fun recordLoss(player: Player, hand: Hand) {
         val netLoss = if (hand.surrendered())
-            hand.netBet() / 2.0
+            if (hand.totalBet() == hand.initialBet)
+                hand.initialBet / 2.0
+            else
+                hand.initialBet.toDouble()
         else
             hand.netBet() + hand.insurance()
         if (netLoss > 0.0) {
@@ -182,7 +185,9 @@ class TableImpl(
             ph.hands.forEach { hand ->
                 player.finalHand(hand)
                 if (hand.isBlackJack()) {
-                    if (!hand.equalPayment)
+                    if (rule.alwaysPay21)
+                        recordWin(player, hand, rule.blackjackPayFactor)
+                    else if (!hand.equalPayment)
                         recordPush(player, hand)
                     else
                         recordWin(player, hand, 1.0)
@@ -215,19 +220,11 @@ class TableImpl(
         return score
     }
 
-    private fun canSplit(player: Player, hand: Hand) =
-        hand.canBeSplit() && (player.balance() >= hand.initialBet || rule.allowFreeSplit)
-
-    private fun canDouble(player: Player, hand: Hand) = hand.canBeDoubled(rule)
-            && (player.balance() >= hand.initialBet || rule.allowFreeDouble)
-
-    private fun canSurrender(hand: Hand) = rule.allowSurrender && hand.canSurrender()
-
     private fun playerStands(@Suppress("UNUSED_PARAMETER") player: Player, hand: Hand) {
         logger.info("Player stand with hand = ${hand.score()}")
     }
 
-    private fun playerDoubles(player: Player, hand: HandImpl) {
+    private fun playerDoubles(player: Player, ph: PlayerHands, hand: HandImpl, pos: Int, dealerUpCard: Card) {
         logger.info("Player double for one card")
         if (hand.canBeFreelyDoubled(rule)) {
             hand.doubleBet(free = true)
@@ -237,6 +234,10 @@ class TableImpl(
         }
         drawOneCardAndGetScore(hand, player)
         logger.info("Player total is ${hand.score()}")
+
+        if (rule.allowDoubleRescue && hand.score() <= 21) {
+            playHand(player, ph, hand, pos, dealerUpCard)
+        }
     }
 
     private fun playerSplits(player: Player, ph: PlayerHands, hand: HandImpl, pos: Int): HandImpl {
@@ -278,7 +279,8 @@ class TableImpl(
     ): Decision {
         val decision = player.nextMove(hand, dealerUpCard)
         when (decision) {
-            Decision.STAND, Decision.HIT -> return decision
+            Decision.STAND -> return Decision.STAND
+            Decision.HIT -> if (hand.canBeHit()) return Decision.HIT
             Decision.SURRENDER -> if (canSurrender(hand)) return decision
             Decision.DOUBLE -> if (canDouble(player, hand)) return decision
             Decision.SPLIT -> if (canSplit(player, hand)) return decision
@@ -300,7 +302,7 @@ class TableImpl(
 
         when (getPlayerDecision(player, hand, dealerUpCard)) {
             Decision.STAND -> playerStands(player, hand)
-            Decision.DOUBLE -> playerDoubles(player, hand)
+            Decision.DOUBLE -> playerDoubles(player, ph, hand, pos, dealerUpCard)
 
             Decision.SPLIT -> {
                 val h = playerSplits(player, ph, hand, pos)
@@ -339,12 +341,21 @@ class TableImpl(
                     playHand(player, ph, hand, i, dealerUpCard)
                     val h = hands[i]
                     player.finalHand(h)
-                    if (h.isBusted()) {
+                    if (h.score() == 21 && rule.alwaysPay21) {
+                        recordWin(player, h, 1.0)
+                        hands.removeAt(i)
+                    }
+                    else if (h.isBusted()) {
                         recordLoss(player, h)
                         hands.removeAt(i)
                     } else if (h.surrendered()) {
-                        player.deposit(hand.totalBet() / 2.0)
-                        recordLoss(player, h)
+                        if (hand.totalBet() == hand.initialBet) {
+                            player.deposit(hand.totalBet() / 2.0)
+                            recordLoss(player, h)
+                        } else {
+                            player.deposit((hand.totalBet() - hand.initialBet).toDouble())
+                            recordLoss(player, h)
+                        }
                         hands.removeAt(i)
                     } else {
                         i += 1

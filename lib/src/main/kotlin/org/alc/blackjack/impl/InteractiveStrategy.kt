@@ -74,6 +74,10 @@ open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
                         println("Hint : ${toString().lowercase()}")
                         null
                     }
+                    "show" -> hand.run {
+                        println("Hand : $this")
+                        null
+                    }
                     else -> null
                 }
             }
@@ -100,10 +104,11 @@ open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
         } else {
             builder.append(score)
         }
-        builder.append(" hit|stand")
-        if (hand.canBeSplit()) builder.append("|split")
-        if (hand.canBeDoubled(table().rule)) builder.append("|double")
-        if (hand.canSurrender() && table().rule.allowSurrender) builder.append("|surrender")
+        builder.append(" stand")
+        if (hand.canBeHit()) builder.append("|hit")
+        if (table().canSplit(account, hand)) builder.append("|split")
+        if (table().canDouble(account,hand)) builder.append("|double")
+        if (table().canSurrender(hand)) builder.append("|surrender")
         if (hint != null) builder.append("|hint")
         builder.append(" > ")
 

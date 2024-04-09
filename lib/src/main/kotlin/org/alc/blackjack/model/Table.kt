@@ -11,4 +11,12 @@ interface Table {
     fun nbPlayers(): Int
     fun newRound(): Boolean
 
+    fun canSplit(account: Account, hand: Hand) =
+        hand.canBeSplit() && (account.balance() >= hand.initialBet || rule.allowFreeSplit)
+
+    fun canDouble(account: Account, hand: Hand) = hand.canBeDoubled(rule)
+            && (account.balance() >= hand.initialBet || rule.allowFreeDouble)
+
+    fun canSurrender(hand: Hand) = (rule.allowSurrender && hand.canSurrender()) ||
+            (rule.allowDoubleRescue && hand.totalBet() > hand.initialBet)
 }

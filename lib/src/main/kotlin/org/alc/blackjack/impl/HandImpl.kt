@@ -43,8 +43,8 @@ internal class HandImpl(
 
     override fun canBeDoubled(rule: TableRule) = when (cards.size) {
         0, 1 -> false
-        2 -> canBeHit
-        else -> rule.allowDoubleAnytime
+        2 -> canBeHit()
+        else -> rule.allowDoubleAnytime && canBeHit()
     }
 
     override fun addCard(c: Card) {
