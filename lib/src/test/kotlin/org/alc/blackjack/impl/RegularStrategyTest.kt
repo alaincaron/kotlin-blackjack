@@ -14,14 +14,6 @@ class RegularStrategyTest : AbstractStrategyTestHelper() {
     override fun createStrategy(gainFactor: Double) = RegularStrategy(account, gainFactor)
 
     @Test
-    fun `should always refuse insurance`() {
-        initStrategy()
-        // always reject insurance
-        val hand = HandImpl(1)
-        assertFalse(strategy.insurance(hand))
-    }
-
-    @Test
     fun `equalPayment should return true if blackjackPlayFactor is less than 50 percent`() {
         every { table.rule } returns TableRule(blackjackPayFactor = 1.49)
         initStrategy()
@@ -36,37 +28,8 @@ class RegularStrategyTest : AbstractStrategyTestHelper() {
     }
 
     @Test
-    fun `initialBet should return the min if enough`() {
-        every { account.balance() } returns 10.0
-        every { table.minBet } returns 1
-
-        initStrategy()
-
-        assertEquals(1, strategy.initialBet())
-    }
-
-    @Test
-    fun `initialBet should return the 0 if enough balance`() {
-        every { account.balance() } returns 0.5
-        every { table.minBet } returns 1
-
-        initStrategy()
-
-        assertEquals(0, strategy.initialBet())
-    }
-
-    @Test
     fun `nextMove default rules never split tens and stand`() {
-        every { account.balance() } returns 1.0
-        every { table.minBet } returns 1
-        every { table.rule } returns TableRule.DEFAULT
-
-        initStrategy()
-
-        val hand = HandBuilder(initialBet = 1).build(Card.ten.spades, Card.ten.spades)
-        for (dealerCard in Rank.entries.map { Card(it, Suit.SPADES) }) {
-            assertStand(hand, dealerCard)
-        }
+        neverSplitTensAndStand(TableRule.DEFAULT)
     }
 
     @Test

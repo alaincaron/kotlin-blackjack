@@ -58,7 +58,7 @@ fun main() {
     simulate("basic.25", table, { a -> RegularStrategy(a, 0.25) })
     simulate("basic.50", table, { a -> RegularStrategy(a, 0.50) })
     simulate("basic.100", table, { a -> RegularStrategy(a, 1.00) })
-    table = TableImpl(rule = TableRule.FREEBET)
+    table = TableImpl(rule = TableRule.FREE_BET)
     simulate("freebet.25", table, { a -> FreeBetStrategy(a, 0.25) })
     simulate("freebet.50", table, { a -> FreeBetStrategy(a, 0.50) })
     simulate("freebet.100", table, { a -> FreeBetStrategy(a, 1.00) })

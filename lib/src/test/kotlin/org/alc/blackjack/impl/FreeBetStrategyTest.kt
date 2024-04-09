@@ -1,78 +1,41 @@
 package org.alc.blackjack.impl
 
 import io.mockk.every
+import org.alc.blackjack.model.Decision
 import org.alc.blackjack.model.TableRule
 import org.alc.card.model.Card
 import org.alc.card.model.Rank
 import org.alc.card.model.Suit
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class FreeBetStrategyTest : AbstractStrategyTestHelper() {
 
-    protected override fun createStrategy(gainFactor: Double) = FreeBetStrategy(account, gainFactor)
-
-    @Test
-    fun `should always refuse insurance`() {
-        initStrategy()
-        // always reject insurance
-        val hand = HandImpl(1)
-        assertFalse(strategy.insurance(hand))
-    }
+    override fun createStrategy(gainFactor: Double) = FreeBetStrategy(account, gainFactor)
 
     @Test
     fun `equalPayment should return true if blackjackPlayFactor is less than 50 percent`() {
-        every { table.rule } returns TableRule.FREEBET.copy(blackjackPayFactor = 1.49)
+        every { table.rule } returns TableRule.FREE_BET.copy(blackjackPayFactor = 1.49)
         initStrategy()
         assertTrue(strategy.equalPayment())
     }
 
     @Test
     fun `equalPayment should return false if blackjackPlayFactor is at least 50 percent`() {
-        every { table.rule } returns TableRule.FREEBET
+        every { table.rule } returns TableRule.FREE_BET
         initStrategy()
         assertFalse(strategy.equalPayment())
     }
 
     @Test
-    fun `initialBet should return the min if enough`() {
-        every { account.balance() } returns 10.0
-        every { table.minBet } returns 1
-
-        initStrategy()
-
-        assertEquals(1, strategy.initialBet())
-    }
-
-    @Test
-    fun `initialBet should return the 0 if enough balance`() {
-        every { account.balance() } returns 0.5
-        every { table.minBet } returns 1
-
-        initStrategy()
-
-        assertEquals(0, strategy.initialBet())
-    }
-
-    @Test
-    fun `nextMove default rules never split tens and stand`() {
-        every { account.balance() } returns 1.0
-        every { table.minBet } returns 1
-        every { table.rule } returns TableRule.FREEBET
-
-        initStrategy()
-
-        val hand = HandBuilder(initialBet = 1).build(Card.ten.spades, Card.ten.spades)
-        for (dealerCard in Rank.entries.map { Card(it, Suit.SPADES) }) {
-            assertStand(hand, dealerCard)
-        }
-    }
+    fun `nextMove default rules never split tens and stand`() = neverSplitTensAndStand(TableRule.FREE_BET)
 
     @Test
     fun `nextMove default rules never split fives and always double`() {
         every { account.balance() } returns 1.0
         every { table.minBet } returns 1
-        every { table.rule } returns TableRule.FREEBET
+        every { table.rule } returns TableRule.FREE_BET
 
         initStrategy()
 
@@ -84,32 +47,26 @@ class FreeBetStrategyTest : AbstractStrategyTestHelper() {
     }
 
     @Test
-    fun `nextMove default rules always split eights`() {
-        every { account.balance() } returns 1.0
-        every { table.minBet } returns 1
-        every { table.rule } returns TableRule.FREEBET
-
-        initStrategy()
-
-        val hand = HandBuilder(1).build(Card.eight.spades, Card.eight.spades)
-        for (dealerRank in Rank.entries) {
-            val dealerCard = Card(dealerRank, Suit.SPADES)
-            assertSplit(hand, dealerCard)
-        }
-    }
+    fun `nextMove default rules always split eights`() = pairOfEights(Decision.SPLIT, TableRule.FREE_BET)
 
     @Test
-    fun `nextMove default rules always double eleven`() {
+    fun `nextMove default rules always double 9 to 11`() {
         every { account.balance() } returns 1.0
         every { table.minBet } returns 1
-        every { table.rule } returns TableRule.FREEBET
+        every { table.rule } returns TableRule.FREE_BET
 
         initStrategy()
-
-        val hand = HandBuilder(1).build(Card.eight.spades, Card.three.spades)
-        for (dealerRank in Rank.entries) {
-            val dealerCard = Card(dealerRank, Suit.SPADES)
-            assertDouble(hand, dealerCard)
+        for (v1 in 1..7) {
+            for (v2 in 7 - v1..9 - v1) {
+                val card1 = Card(Rank.entries[v1], Suit.DIAMONDS)
+                val card2 = Card(Rank.entries[v2], Suit.SPADES)
+                if (card2.rank == Rank.ACE) continue // skip 8 and ACE
+                val hand = HandBuilder(1).build(card1, card2)
+                for (dealerRank in Rank.entries) {
+                    val dealerCard = Card(dealerRank, Suit.SPADES)
+                    assertDouble(hand, dealerCard)
+                }
+            }
         }
     }
 
@@ -117,7 +74,7 @@ class FreeBetStrategyTest : AbstractStrategyTestHelper() {
     fun `nextMove splits even if insufficient balance`() {
         every { account.balance() } returnsMany listOf(1.0, 0.0)
         every { table.minBet } returns 1
-        every { table.rule } returns TableRule.FREEBET
+        every { table.rule } returns TableRule.FREE_BET
 
         initStrategy()
 
@@ -130,7 +87,7 @@ class FreeBetStrategyTest : AbstractStrategyTestHelper() {
     fun `nextMove doubles even if insufficient balance`() {
         every { account.balance() } returnsMany listOf(1.0, 0.0)
         every { table.minBet } returns 1
-        every { table.rule } returns TableRule.FREEBET
+        every { table.rule } returns TableRule.FREE_BET
 
         initStrategy()
 
@@ -143,7 +100,7 @@ class FreeBetStrategyTest : AbstractStrategyTestHelper() {
     fun `nextMove doubles free soft-20 against 6 with own money`() {
         every { account.balance() } returns 1.0
         every { table.minBet } returns 1
-        every { table.rule } returns TableRule.FREEBET
+        every { table.rule } returns TableRule.FREE_BET
 
         initStrategy()
 
@@ -156,7 +113,7 @@ class FreeBetStrategyTest : AbstractStrategyTestHelper() {
     fun `nextMove doubles free soft-18 against 5 and 6 with own money`() {
         every { account.balance() } returns 1.0
         every { table.minBet } returns 1
-        every { table.rule } returns TableRule.FREEBET
+        every { table.rule } returns TableRule.FREE_BET
 
         initStrategy()
 
@@ -165,11 +122,12 @@ class FreeBetStrategyTest : AbstractStrategyTestHelper() {
         assertDouble(hand, Card.six.clubs)
         assertDouble(hand, Card.five.hearts)
     }
+
     @Test
-    fun `nextMove stands on free soft-20 against 6 if not engough money`() {
+    fun `nextMove stands on free soft-20 against 6 if not enough money`() {
         every { account.balance() } returnsMany listOf(1.0, 0.0)
         every { table.minBet } returns 1
-        every { table.rule } returns TableRule.FREEBET
+        every { table.rule } returns TableRule.FREE_BET
 
         initStrategy()
 

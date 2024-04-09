@@ -8,7 +8,7 @@ import org.alc.card.model.Card
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
-class FreeBetTableImplTest : TableImplTestHelper(TableRule.FREEBET) {
+class FreeBetTableImplTest : TableImplTestHelper(TableRule.FREE_BET) {
 
 
     @Test

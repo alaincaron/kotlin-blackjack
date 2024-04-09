@@ -6,9 +6,17 @@ import org.alc.blackjack.model.Hand
 import org.alc.card.model.Card
 import org.alc.card.model.Suit
 
-class SpanishStrategy(account: Account, gainFactor: Double? = null) : DefaultStrategy(account, gainFactor) {
+class Spanish21Strategy(account: Account, gainFactor: Double? = null) : DefaultStrategy(account, gainFactor) {
 
     enum class Sequence21 { SUITED, ANY, SPADES }
+
+    override fun insurance(hand: Hand): Boolean {
+        return false
+    }
+
+    override fun equalPayment(): Boolean {
+        return false
+    }
 
     override fun hardDecision(hand: Hand, dealerCard: Card) =
         if (table().rule.dealerHitsOnSoft17) hardDecisionDealerHitOnSoft17(

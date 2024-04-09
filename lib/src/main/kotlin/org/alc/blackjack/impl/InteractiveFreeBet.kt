@@ -17,7 +17,7 @@ fun main() {
         random = random,
         minBet = 25,
         maxBet = 1000,
-        rule = TableRule.FREEBET
+        rule = TableRule.FREE_BET
     )
     val account = table.createAccount(1000.0)
     val strategy = TrainingStrategy(FreeBetStrategy(account))

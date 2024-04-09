@@ -20,7 +20,7 @@ data class TableRule(
     companion object {
         val DEFAULT = TableRule()
 
-        val SPANISH = TableRule(
+        val SPANISH21 = TableRule(
             allowSurrender = true,
             allowDoubleAnytime = true,
             allowDoubleRescue = true,
@@ -31,7 +31,7 @@ data class TableRule(
             alwaysPay21 = true
         )
 
-        val FREEBET = TableRule(
+        val FREE_BET = TableRule(
             allowFreeSplit = true,
             allowFreeDouble = true,
             pushOn22 = true
