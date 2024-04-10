@@ -1,6 +1,7 @@
 package org.alc.blackjack.impl
 
 import org.alc.blackjack.model.*
+import org.alc.card.impl.*
 
 fun simulate(
     name: String,
@@ -58,9 +59,13 @@ fun main() {
     simulate("basic.25", table, { a -> RegularStrategy(a, 0.25) })
     simulate("basic.50", table, { a -> RegularStrategy(a, 0.50) })
     simulate("basic.100", table, { a -> RegularStrategy(a, 1.00) })
-    table = TableImpl(rule = TableRule.FREE_BET)
+    table = TableImpl(rule = TableRule.FREE_BET, gameShoe = Spanish21GameShoeImpl())
     simulate("freebet.25", table, { a -> FreeBetStrategy(a, 0.25) })
     simulate("freebet.50", table, { a -> FreeBetStrategy(a, 0.50) })
     simulate("freebet.100", table, { a -> FreeBetStrategy(a, 1.00) })
+    table = TableImpl(rule = TableRule.SPANISH21)
+    simulate("spanish.25", table, { a -> Spanish21Strategy(a, 0.25) })
+    simulate("spanish.50", table, { a -> Spanish21Strategy(a, 0.50) })
+    simulate("spanish.100", table, { a -> Spanish21Strategy(a, 1.00) })
 }
 
