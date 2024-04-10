@@ -18,5 +18,5 @@ interface Table {
             && (account.balance() >= hand.initialBet || rule.allowFreeDouble)
 
     fun canSurrender(hand: Hand) = (rule.allowSurrender && hand.canSurrender()) ||
-            (rule.allowDoubleRescue && hand.totalBet() > hand.initialBet)
+            (rule.allowDoubleRescue && hand.isDoubled())
 }

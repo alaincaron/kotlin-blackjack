@@ -10,7 +10,6 @@ import kotlin.test.assertEquals
 
 class FreeBetTableImplTest : TableImplTestHelper(TableRule.FREE_BET) {
 
-
     @Test
     fun `should allow to split pair ACES only once`() {
         initTable()

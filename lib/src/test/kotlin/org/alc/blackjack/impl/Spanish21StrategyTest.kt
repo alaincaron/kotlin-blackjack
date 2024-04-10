@@ -46,7 +46,6 @@ class Spanish21StrategyTest : AbstractStrategyTestHelper() {
     fun `nextMove Spanish21-StandsOnSoft17 rules always split eights even on ACE`() =
         pairOfEights(Decision.SPLIT, TableRule.SPANISH21.copy(dealerHitsOnSoft17 = false))
 
-
     @Test
     fun `nextMove default rules always double eleven`() {
         every { account.balance() } returns 1.0

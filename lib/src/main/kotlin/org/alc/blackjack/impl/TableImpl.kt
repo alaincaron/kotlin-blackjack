@@ -7,6 +7,7 @@ import org.alc.card.impl.RandomShuffler
 import org.alc.card.model.Card
 import org.alc.card.model.GameShoe
 import org.alc.card.model.Rank
+import org.alc.card.model.Suit
 import java.security.SecureRandom
 import java.util.*
 
@@ -156,16 +157,15 @@ class TableImpl(
             player.recordPush()
     }
 
-    private fun recordWin(player: Player, hand: Hand, factor: Double) {
-        val rawAmountWon = hand.totalBet() * factor
-        logger.info("Player won $rawAmountWon")
-        player.deposit(hand.netBet() + rawAmountWon)
-        player.recordWin(rawAmountWon - hand.insurance())
+    private fun recordWin(player: Player, hand: Hand, amountWon: Double) {
+        logger.info("Player won $amountWon")
+        player.deposit(hand.netBet() + amountWon)
+        player.recordWin(amountWon - hand.insurance())
     }
 
     private fun recordLoss(player: Player, hand: Hand) {
         val netLoss = if (hand.surrendered())
-            if (hand.totalBet() == hand.initialBet)
+            if (!hand.isDoubled())
                 hand.initialBet / 2.0
             else
                 hand.initialBet.toDouble()
@@ -186,11 +186,11 @@ class TableImpl(
                 player.finalHand(hand)
                 if (hand.isBlackJack()) {
                     if (rule.alwaysPay21)
-                        recordWin(player, hand, rule.blackjackPayFactor)
+                        recordWin(player, hand, hand.totalBet() * rule.blackjackPayFactor)
                     else if (!hand.equalPayment)
                         recordPush(player, hand)
                     else
-                        recordWin(player, hand, 1.0)
+                        recordWin(player, hand, hand.totalBet().toDouble())
                 } else {
                     val insurance = hand.insurance()
                     if (insurance > 0.0) {
@@ -321,6 +321,38 @@ class TableImpl(
         }
     }
 
+    private fun bonus21(hand: Hand, dealerUpCard: Card): Double {
+        if (hand.isDoubled()) return hand.totalBet().toDouble()
+        return when (hand.nbCards()) {
+            1 -> throw IllegalStateException("Can't have 21 with only one card")
+            2,4 -> hand.initialBet.toDouble()
+            3 -> bonusSequence(hand, dealerUpCard)
+            5 -> hand.initialBet * 1.5
+            6 -> hand.initialBet* 2.0
+            else -> hand.initialBet * 3.0
+        }
+    }
+
+    private fun suitedBonusFactor(suit: Suit) = if (suit == Suit.SPADES) 3.0 else 2.0
+
+    private fun bonusSequence(hand: Hand, dealerUpCard: Card): Double {
+        val suits = Array(3) { i -> hand[i].suit}
+        var count = 0
+        for (i in 0..<hand.nbCards()) {
+            if (hand[i].value in 6..8) ++count else break
+        }
+        if (count == 3) {
+            if (suits[0] == suits[1] && suits[1] == suits[2]) {
+                if (dealerUpCard.value == 7 && hand[0].value == 7 && hand[1].value == 7) {
+                    return (if (hand.initialBet >= 25) 5000.0 else 1000.0) + hand.initialBet * suitedBonusFactor(suits[0])
+                }
+                return hand.initialBet * suitedBonusFactor(suits[0])
+            }
+            return hand.initialBet * 1.5
+        }
+        return hand.initialBet.toDouble()
+    }
+
     private fun playHands(dealerUpCard: Card) {
         playerHands.forEach { (player, ph) ->
             var i = 0
@@ -331,10 +363,10 @@ class TableImpl(
                     player.finalHand(hand)
                     if (hand.equalPayment) {
                         logger.info("Player accepted equal payment on Blackjack")
-                        recordWin(player, hand, 1.0)
+                        recordWin(player, hand, hand.totalBet().toDouble())
                     } else {
                         logger.info("BlackJack pays ${rule.blackjackPayFactor} the bet")
-                        recordWin(player, hand, rule.blackjackPayFactor)
+                        recordWin(player, hand, hand.totalBet() * rule.blackjackPayFactor)
                     }
                     hands.removeAt(i)
                 } else {
@@ -342,14 +374,14 @@ class TableImpl(
                     val h = hands[i]
                     player.finalHand(h)
                     if (h.score() == 21 && rule.alwaysPay21) {
-                        recordWin(player, h, 1.0)
+                        recordWin(player, h, bonus21(h, dealerUpCard))
                         hands.removeAt(i)
                     }
                     else if (h.isBusted()) {
                         recordLoss(player, h)
                         hands.removeAt(i)
                     } else if (h.surrendered()) {
-                        if (hand.totalBet() == hand.initialBet) {
+                        if (!hand.isDoubled()) {
                             player.deposit(hand.totalBet() / 2.0)
                             recordLoss(player, h)
                         } else {
@@ -381,8 +413,8 @@ class TableImpl(
             ph.hands.forEach { hand ->
                 val score = hand.score()
                 when {
-                    dealerScore > 22 || (dealerScore == 22 && !rule.pushOn22) -> recordWin(player, hand, 1.0)
-                    score > dealerScore -> recordWin(player, hand, 1.0)
+                    dealerScore > 22 || (dealerScore == 22 && !rule.pushOn22) -> recordWin(player, hand, hand.totalBet().toDouble())
+                    score > dealerScore -> recordWin(player, hand, hand.totalBet().toDouble())
                     score == dealerScore || dealerScore == 22 -> recordPush(player, hand)
                     else -> recordLoss(player, hand)
                 }

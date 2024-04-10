@@ -56,6 +56,11 @@ open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
 
     override fun nextMove(hand: Hand, dealerCard: Card) = nextMove(hand, dealerCard, null)
 
+    private fun validateMove(decision: Decision, validator: () -> Boolean): Decision? {
+        if (validator()) return decision
+        println("Invalid move: $decision")
+        return null
+    }
      protected fun nextMove(hand: Hand, dealerCard: Card, hint: Decision? = null): Decision {
         val msg = printMsg(hand, hint)
         return queryUser(
@@ -65,11 +70,11 @@ open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
             },
             { reply: String ->
                 when (reply) {
-                    "hit" -> Decision.HIT
+                    "hit" -> validateMove(Decision.HIT) { hand.canBeHit() }
                     "stand" -> Decision.STAND
-                    "split" -> if (hand.canBeSplit()) Decision.SPLIT else null
-                    "double" -> if (hand.canBeDoubled(table().rule)) Decision.DOUBLE else null
-                    "surrender" -> if (hand.canSurrender() && table().rule.allowSurrender) Decision.SURRENDER else null
+                    "split" -> validateMove(Decision.SPLIT) { table().canSplit(account, hand) }
+                    "double" -> validateMove(Decision.DOUBLE) { table().canDouble(account, hand) }
+                    "surrender" ->  validateMove(Decision.SURRENDER) {table().canSurrender(hand) }
                     "hint" -> hint?.run {
                         println("Hint : ${toString().lowercase()}")
                         null
