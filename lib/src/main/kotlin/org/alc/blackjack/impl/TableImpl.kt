@@ -235,7 +235,7 @@ class TableImpl(
         drawOneCardAndGetScore(hand, player)
         logger.info("Player total is ${hand.score()}")
 
-        if (rule.allowDoubleRescue && hand.score() <= 21) {
+        if (rule.allowDoubleRescue && hand.score() < 21) {
             playHand(player, ph, hand, pos, dealerUpCard)
         }
     }

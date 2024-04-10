@@ -43,7 +43,6 @@ class Spanish21TableImplTest: TableImplTestHelper(TableRule.SPANISH21) {
         every { strategy.nextMove(any(), any()) } returnsMany listOf(
             Decision.SPLIT,
             Decision.DOUBLE,
-            Decision.STAND,
             Decision.HIT,
             Decision.STAND
         )
