@@ -175,7 +175,7 @@ class Spanish21Strategy(account: Account, gainFactor: Double? = null) : DefaultS
             2 -> standOrHit(hand, 4, Sequence21.ANY)
             3 -> standOrHit(hand, 5, Sequence21.SUITED)
             4, 5 -> standOrHit(hand, 6)
-            7 -> Decision.STAND
+            6 -> Decision.STAND
             else -> Decision.HIT
         }
 

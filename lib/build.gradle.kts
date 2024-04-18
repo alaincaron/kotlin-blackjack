@@ -65,12 +65,16 @@ task<JavaExec>("freebet") {
     mainClass = "org.alc.blackjack.impl.InteractiveFreeBetKt"
     classpath = java.sourceSets["main"].runtimeClasspath
     standardInput = System.`in`
-
 }
 
 task<JavaExec>("spanish21") {
     mainClass = "org.alc.blackjack.impl.InteractiveSpanish21Kt"
     classpath = java.sourceSets["main"].runtimeClasspath
     standardInput = System.`in`
+}
 
+task<JavaExec>("simulator") {
+    mainClass = "org.alc.blackjack.impl.BlackjackSimulatorKt"
+    classpath = java.sourceSets["main"].runtimeClasspath
+    standardInput = System.`in`
 }
