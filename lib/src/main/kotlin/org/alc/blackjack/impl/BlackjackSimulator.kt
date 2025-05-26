@@ -56,6 +56,7 @@ fun simulate(
 
 fun main() {
     var table = TableImpl(rule = TableRule.DEFAULT)
+    println("name                         avgRound    avgOutcome avgGain loss% win%     time")
     simulate("basic.25", table, { a -> RegularStrategy(a, 0.25) })
     simulate("basic.50", table, { a -> RegularStrategy(a, 0.50) })
     simulate("basic.100", table, { a -> RegularStrategy(a, 1.00) })

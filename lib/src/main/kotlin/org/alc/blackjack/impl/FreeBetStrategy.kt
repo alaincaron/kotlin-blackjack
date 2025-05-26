@@ -1,9 +1,6 @@
 package org.alc.blackjack.impl
 
-import org.alc.blackjack.model.Account
-import org.alc.blackjack.model.Decision
-import org.alc.blackjack.model.Hand
-import org.alc.blackjack.model.Table
+import org.alc.blackjack.model.*
 import org.alc.card.model.Card
 
 class FreeBetStrategy(account: Account, gainFactor: Double? = null) : DefaultStrategy(account, gainFactor) {

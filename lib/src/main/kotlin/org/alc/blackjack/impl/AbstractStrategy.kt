@@ -1,9 +1,6 @@
 package org.alc.blackjack.impl
 
-import org.alc.blackjack.model.Account
-import org.alc.blackjack.model.Hand
-import org.alc.blackjack.model.Strategy
-import org.alc.blackjack.model.Table
+import org.alc.blackjack.model.*
 import org.alc.card.model.Card
 import kotlin.math.max
 
@@ -54,4 +51,7 @@ abstract class AbstractStrategy(final override val account: Account) : Strategy 
     override fun dealerCardVisible(card: Card) {}
     override fun finalHand(hand: Hand) {}
     override fun finalDealerHand(hand: Hand) {}
+
+    override fun recordResult(outcome: Outcome, amount: Double, playerHand: Hand, dealerHand: Hand?){
+    }
 }

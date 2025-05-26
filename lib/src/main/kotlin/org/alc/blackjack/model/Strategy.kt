@@ -2,7 +2,7 @@ package org.alc.blackjack.model
 
 import org.alc.card.model.Card
 
-interface Strategy {
+interface Strategy : Observer {
     val account: Account
 
     fun enteredTable(table: Table)
@@ -13,19 +13,10 @@ interface Strategy {
     fun initialBet(): Int
     fun nextMove(hand: Hand, dealerCard: Card): Decision
 
-    fun cardDealt(card: Card)  {}
-    fun deckShuffled()  {}
-    fun received(card: Card)
-    fun dealerReceived(card: Card)
-    fun dealerCardVisible(card: Card)
-    fun finalHand(hand: Hand)
-    fun finalDealerHand(hand: Hand)
+    override fun cardDealt(card: Card)  {}
+    override fun deckShuffled()  {}
 
-    fun recordPush()
     fun nbPush(): Int
-
-    fun recordWin(amount: Double)
-    fun recordLoss(amount: Double)
 
     fun nbWin(): Int
     fun nbLoss(): Int
