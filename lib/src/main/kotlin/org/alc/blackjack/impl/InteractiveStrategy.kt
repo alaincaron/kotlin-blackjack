@@ -1,8 +1,6 @@
 package org.alc.blackjack.impl
 
-import org.alc.blackjack.model.Account
-import org.alc.blackjack.model.Decision
-import org.alc.blackjack.model.Hand
+import org.alc.blackjack.model.*
 import org.alc.card.model.Card
 
 
@@ -142,20 +140,24 @@ open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
         else println("Dealer score is ${hand.score()}")
     }
 
-    override fun recordPush() {
-        super.recordPush()
-        println("PUSH")
-    }
+    override fun recordResult(outcome: Outcome, amount: Double, playerHand: Hand, dealerHand: Hand?) {
+        super.recordResult(outcome, amount, playerHand, dealerHand)
+        when (outcome) {
+            Outcome.LOSS, Outcome.BUST, Outcome.SURRENDER, Outcome.DOUBLE_RESCUE, Outcome.DOUBLE_LOSS -> {
+                println("Player lost $amount")
+            }
+            Outcome.PUSH -> {
+                println("PUSH")
+            }
+            Outcome.WIN, Outcome.DOUBLE_WIN, Outcome.BLACKJACK, Outcome.BLACKJACK_EQUAL_PAYMENT,Outcome.DEALER_BUST, Outcome.BONUS_21, Outcome.BONUS_21_2,
+            Outcome.BONUS_21_3, Outcome.SUPER_7_BONUS-> {
+                println("Player won $amount")
+            }
+            Outcome.INSURANCE_LOSS -> {
+                println("Player lost insurance amount: $amount")
+            }
 
-    override fun recordWin(amount: Double) {
-        super.recordWin(amount)
-        println("Player won $amount")
+        }
     }
-
-    override fun recordLoss(amount: Double) {
-        super.recordLoss(amount)
-        println("Player lost $amount")
-    }
-
 
 }

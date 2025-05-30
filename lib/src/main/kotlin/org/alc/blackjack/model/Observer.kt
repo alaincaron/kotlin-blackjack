@@ -11,7 +11,4 @@ interface Observer {
     fun dealerCardVisible(card: Card)
     fun finalHand(hand: Hand)
     fun finalDealerHand(hand: Hand)
-    fun recordPush()
-    fun recordWin(amount: Double)
-    fun recordLoss(amount: Double)
 }

@@ -148,18 +148,17 @@ class TableImpl(
         logger.info("Push")
         player.deposit(hand.netBet().toDouble())
         if (hand.insurance() > 0.0) {
-            player.recordLoss(hand.insurance())
             player.recordResult(Outcome.INSURANCE_LOSS, hand.insurance(), hand, dealerHand)
         } else {
-            player.recordPush()
             player.recordResult(Outcome.PUSH, 0.0, hand, dealerHand)
         }
     }
 
     private fun recordWin(player: Player, hand: Hand, amountWon: Double, outcome: Outcome, dealerHand: Hand?) {
         logger.info("Player won $amountWon")
+        val netWon = amountWon - hand.insurance()
         player.deposit(hand.netBet() + amountWon)
-        player.recordWin(amountWon - hand.insurance())
+        player.recordResult(outcome, netWon, hand, dealerHand)
     }
 
     private fun recordLoss(player: Player, hand: Hand, dealerHand: Hand?) {
@@ -187,7 +186,6 @@ class TableImpl(
         } else {
             logger.info("Player lost a FREE hand")
         }
-        player.recordLoss(netloss)
         player.recordResult(outcome, netloss, hand, dealerHand)
     }
 
@@ -207,13 +205,14 @@ class TableImpl(
                         )
                     else if (!hand.equalPayment)
                         recordPush(player, hand, dealerHand)
-                    else
-                        recordWin(player, hand, hand.totalBet().toDouble(), Outcome.BLACKJACK, dealerHand)
+                    else {
+                        logger.info("Player accepted equal payment on Blackjack")
+                        recordWin(player, hand, hand.totalBet().toDouble(), Outcome.BLACKJACK_EQUAL_PAYMENT, dealerHand)
+                    }
                 } else {
                     val insurance = hand.insurance()
                     if (insurance > 0.0) {
                         player.deposit(insurance)
-                        player.recordResult(Outcome.INSURANCE, insurance * 2.0, hand, dealerHand)
                         hand.insure(0.0)
                         recordPush(player, hand, dealerHand)
                     } else {
@@ -436,17 +435,25 @@ class TableImpl(
         val dealerScore = dealerHand.score()
         playerHands.forEach { (player, ph) ->
             ph.hands.forEach { hand ->
+                val totalBet = hand.totalBet().toDouble()
                 val score = hand.score()
                 when {
                     dealerScore > 22 || (dealerScore == 22 && !rule.pushOn22) -> recordWin(
                         player,
                         hand,
-                        hand.totalBet().toDouble(),
+                        totalBet,
                         Outcome.DEALER_BUST,
                         dealerHand
                     )
 
-                    score > dealerScore -> recordWin(player, hand, hand.totalBet().toDouble(), Outcome.WIN, dealerHand)
+                    score > dealerScore -> recordWin(
+                        player,
+                        hand,
+                        totalBet,
+                        if (hand.isDoubled() || hand.isFreeDoubled()) Outcome.DOUBLE_WIN else Outcome.WIN,
+                        dealerHand
+                    )
+
                     score == dealerScore || dealerScore == 22 -> recordPush(player, hand, dealerHand)
                     else -> recordLoss(player, hand, dealerHand)
                 }

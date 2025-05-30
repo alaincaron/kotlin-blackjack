@@ -16,6 +16,5 @@ enum class Outcome {
     DOUBLE_LOSS,
     DOUBLE_WIN,
     DOUBLE_RESCUE,
-    INSURANCE_LOSS,
-    INSURANCE
+    INSURANCE_LOSS
 }

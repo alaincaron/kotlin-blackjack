@@ -59,76 +59,76 @@ abstract class TableImplTestHelper(
         table.addPlayer(player)
     }
 
-    protected fun prepareShoe(vararg cards: Card) {
-        every { shoe.dealCard() } returnsMany listOf(
-            Card.two.spades, // throw-away card
-            *cards
-        )
+    protected fun prepareShoe( cards: List<Card>) {
+        every { shoe.dealCard() } returnsMany buildList(cards.size + 1) {
+            add(Card.two.spades) // throw-away card
+            addAll(cards)
+        }
         every { strategy.initialBet() } returns minBet
     }
 
     @Test
     fun `should offer insurance on visible ace and payback insurance if blackjack`() {
         initTable()
-        val cards = arrayOf(
+        val cards = listOf(
             Card.five.clubs, // player 1st card
             Card.ace.diamonds, // dealer visible card
             Card.six.hearts,  // player 2nd card
             Card.queen.spades, // dealer hidden card
         )
-        prepareShoe(*cards)
-        val dealerCards = listOf(cards[1], cards[3])
-        val playerCards = listOf(cards[0], cards[2])
+        prepareShoe(cards)
+        val dealerCards = select(cards, 1, 3)
+        val playerCards = select(cards,0, 2)
         every { strategy.insurance(handMatch(playerCards)) } returns true
 
         table.newRound()
 
-        verify { strategy.recordPush() }
         assertEquals(initialAmount, account.balance())
         verify { strategy.dealerCardVisible(cards[3]) }
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
         verify { strategy.finalDealerHand(handMatch(dealerCards)) }
         verify { strategy.finalHand(handMatch(playerCards)) }
+        verify { strategy.recordResult(Outcome.PUSH, 0.0, handMatch(playerCards), handMatch(dealerCards))}
     }
 
     @Test
     fun `should offer insurance on visible ace and end the hand for the player if blackjack and insurance refused`() {
         initTable()
 
-        val cards = arrayOf(
+        val cards = listOf(
             Card.five.spades, // player 1st card
             Card.ace.diamonds, // dealer visible card
             Card.six.hearts,  // player 2nd card
             Card.king.spades, // dealer hidden card
         )
-        val playerCards = listOf(cards[0], cards[2])
-        val dealerCards = listOf(cards[1], cards[3])
+        val playerCards = select(cards, 0, 2)
+        val dealerCards = select(cards, 1, 3)
         val dealerCard = cards[3]
-        prepareShoe(*cards)
+        prepareShoe(cards)
         every { strategy.insurance(handMatch(playerCards)) } returns false
 
         table.newRound()
 
-        verify { strategy.recordLoss(minBet.toDouble()) }
         assertEquals(initialAmount - minBet, account.balance())
         verify { strategy.dealerCardVisible(dealerCard) }
         verify { strategy.finalHand(handMatch(playerCards)) }
         verify { strategy.finalDealerHand(handMatch(dealerCards)) }
+        verify { strategy.recordResult(Outcome.LOSS, minBet.toDouble(), handMatch(playerCards), handMatch(dealerCards))}
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
     }
 
     @Test
     fun `should offer insurance on visible ace and play normally if insurance refused`() {
         initTable()
-        val cards = arrayOf(
+        val cards = listOf(
             Card.five.spades, // player 1st card
             Card.ace.spades, // dealer visible card
             Card.six.hearts,  // player 2nd card
             Card.seven.diamonds, // dealer hidden card
             Card.nine.hearts // player 3rd card
         )
-        prepareShoe(*cards)
-        val dealerCards = listOf(cards[1], cards[3])
+        prepareShoe(cards)
+        val dealerCards = select(cards, 1, 3)
         val playerCards = mutableListOf(cards[0], cards[2])
         every { strategy.insurance(handMatch(playerCards)) } returns false
         every { strategy.nextMove(handMatch(playerCards), dealerCards[0]) } returns Decision.HIT
@@ -136,10 +136,10 @@ abstract class TableImplTestHelper(
         table.newRound()
 
         verify { strategy.dealerCardVisible(dealerCards[1])}
-        verify { strategy.recordWin(minBet.toDouble()) }
         assertEquals(initialAmount + minBet, account.balance())
         playerCards.add(cards[4])
         verify { strategy.finalHand(handMatch(playerCards))}
         verify { strategy.finalDealerHand(handMatch(dealerCards))}
+        verify { strategy.recordResult(Outcome.WIN, minBet.toDouble(), handMatch(playerCards), handMatch(dealerCards))}
     }
 }

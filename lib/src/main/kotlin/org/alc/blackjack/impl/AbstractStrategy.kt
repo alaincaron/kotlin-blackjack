@@ -26,21 +26,7 @@ abstract class AbstractStrategy(final override val account: Account) : Strategy 
     protected fun table() = _table ?: throw IllegalStateException("No table")
     protected fun tableNoThrow() = _table
 
-    override fun recordPush() {
-        ++_nbPush
-    }
-
     override fun nbPush() = _nbPush
-
-    override fun recordWin(amount: Double) {
-        _nbWin += 1
-        amountWon += amount
-    }
-
-    override fun recordLoss(amount: Double) {
-        _nbLoss += 1
-        amountLoss += amount
-    }
 
     override fun nbWin() = _nbWin
     override fun nbLoss() = _nbLoss
@@ -52,6 +38,21 @@ abstract class AbstractStrategy(final override val account: Account) : Strategy 
     override fun finalHand(hand: Hand) {}
     override fun finalDealerHand(hand: Hand) {}
 
-    override fun recordResult(outcome: Outcome, amount: Double, playerHand: Hand, dealerHand: Hand?){
+    override fun recordResult(outcome: Outcome, amount: Double, playerHand: Hand, dealerHand: Hand?) {
+        when (outcome) {
+            Outcome.LOSS, Outcome.BUST, Outcome.SURRENDER, Outcome.DOUBLE_RESCUE, Outcome.DOUBLE_LOSS -> {
+                ++_nbLoss
+                amountLoss += amount
+            }
+            Outcome.PUSH -> ++_nbPush
+            Outcome.WIN, Outcome.DOUBLE_WIN, Outcome.BLACKJACK, Outcome.BLACKJACK_EQUAL_PAYMENT,Outcome.DEALER_BUST, Outcome.BONUS_21, Outcome.BONUS_21_2,
+            Outcome.BONUS_21_3, Outcome.SUPER_7_BONUS-> {
+                ++_nbWin
+                amountWon += amount
+            }
+            Outcome.INSURANCE_LOSS -> {
+                amountLoss += amount
+            }
+        }
     }
 }

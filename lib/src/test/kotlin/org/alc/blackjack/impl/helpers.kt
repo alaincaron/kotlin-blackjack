@@ -1,9 +1,8 @@
 package org.alc.blackjack.impl
 
-import io.mockk.Matcher
-import io.mockk.MockKMatcherScope
-import org.alc.blackjack.model.Hand
-import org.alc.card.model.Card
+import io.mockk.*
+import org.alc.blackjack.model.*
+import org.alc.card.model.*
 
 
 data class HandMatch(
@@ -28,8 +27,10 @@ data class HandMatch(
 }
 
 fun MockKMatcherScope.handMatch(cards: List<Card>) = match(HandMatch(cards))
-fun MockKMatcherScope.handMatch(vararg cards: Card) = match(HandMatch(listOf(*cards)))
 
+fun <T> select(from: List<T>, vararg idx: Int) = mutableListOf<T>().also { list ->
+    idx.forEach { list.add(from[it]) }
+}
 
 class HandBuilder(
     var initialBet: Int,
@@ -39,7 +40,13 @@ class HandBuilder(
     var isFree: Boolean = false
 ) {
     fun build(vararg cards: Card): Hand =
-        HandImpl(initialBet, isFromSplit, canBeHit, canBeSplit, isFree).also { h -> cards.forEach { h.addCard(it) } }
+        HandImpl(
+            initialBet,
+            isFromSplit,
+            canBeHit,
+            canBeSplit,
+            isFree
+        ).also { h -> cards.forEach { h.addCard(it) } }
 
 }
 
