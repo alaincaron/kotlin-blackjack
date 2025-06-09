@@ -59,6 +59,7 @@ open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
         println("Invalid move: $decision")
         return null
     }
+
      protected fun nextMove(hand: Hand, dealerCard: Card, hint: Decision? = null): Decision {
         val msg = printMsg(hand, hint)
         return queryUser(

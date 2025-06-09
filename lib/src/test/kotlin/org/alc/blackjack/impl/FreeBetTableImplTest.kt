@@ -1,7 +1,6 @@
 package org.alc.blackjack.impl
 
-import io.mockk.every
-import io.mockk.verify
+import io.mockk.*
 import org.alc.blackjack.model.*
 import org.alc.card.model.Card
 import org.junit.jupiter.api.Test
@@ -73,6 +72,11 @@ class FreeBetTableImplTest : TableImplTestHelper(TableRule.FREE_BET) {
         verify { strategy.finalHand(handMatch(playerFirstHandCards))}
         verify { strategy.finalHand(handMatch(playerSecondHandCards))}
         verify { strategy.finalDealerHand(handMatch(dealerCards)) }
+        verify { strategy.dealerCardVisible(dealerCards[1])}
+        verifyOrder {
+            strategy.dealerReceived(dealerCards[0])
+            strategy.dealerReceived(dealerCards[2])
+        }
     }
 
 }
