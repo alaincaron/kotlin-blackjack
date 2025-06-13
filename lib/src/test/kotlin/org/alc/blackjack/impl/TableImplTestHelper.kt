@@ -1,10 +1,7 @@
 package org.alc.blackjack.impl
 
-import io.mockk.MockKAnnotations
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.RelaxedMockK
-import io.mockk.unmockkAll
-import io.mockk.verify
 import org.alc.blackjack.model.*
 import org.alc.card.model.Card
 import org.alc.card.model.GameShoe
@@ -83,8 +80,10 @@ abstract class TableImplTestHelper(
 
         table.newRound()
 
+        verifyPlayerCards(strategy, playerCards)
+        verifyDealerCards(strategy, dealerCards)
+
         assertEquals(initialAmount, account.balance())
-        verify { strategy.dealerCardVisible(cards[3]) }
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
         verify { strategy.finalDealerHand(handMatch(dealerCards)) }
         verify { strategy.finalHand(handMatch(playerCards)) }
@@ -103,14 +102,15 @@ abstract class TableImplTestHelper(
         )
         val playerCards = select(cards, 0, 2)
         val dealerCards = select(cards, 1, 3)
-        val dealerCard = cards[3]
         prepareShoe(cards)
         every { strategy.insurance(handMatch(playerCards)) } returns false
 
         table.newRound()
 
+        verifyPlayerCards(strategy, playerCards)
+        verifyDealerCards(strategy, dealerCards)
+
         assertEquals(initialAmount - minBet, account.balance())
-        verify { strategy.dealerCardVisible(dealerCard) }
         verify { strategy.finalHand(handMatch(playerCards)) }
         verify { strategy.finalDealerHand(handMatch(dealerCards)) }
         verify { strategy.recordResult(Outcome.LOSS, minBet.toDouble(), handMatch(playerCards), handMatch(dealerCards))}
@@ -129,15 +129,17 @@ abstract class TableImplTestHelper(
         )
         prepareShoe(cards)
         val dealerCards = select(cards, 1, 3)
-        val playerCards = mutableListOf(cards[0], cards[2])
-        every { strategy.insurance(handMatch(playerCards)) } returns false
-        every { strategy.nextMove(handMatch(playerCards), dealerCards[0]) } returns Decision.HIT
+        val playerInitialCards = select(cards, 0, 2)
+        every { strategy.insurance(handMatch(playerInitialCards)) } returns false
+        every { strategy.nextMove(handMatch(playerInitialCards), dealerCards[0]) } returns Decision.HIT
+        val playerCards = playerInitialCards + cards[4]
 
         table.newRound()
 
-        verify { strategy.dealerCardVisible(dealerCards[1])}
+        verifyPlayerCards(strategy, playerCards)
+        verifyDealerCards(strategy, dealerCards)
+
         assertEquals(initialAmount + minBet, account.balance())
-        playerCards.add(cards[4])
         verify { strategy.finalHand(handMatch(playerCards))}
         verify { strategy.finalDealerHand(handMatch(dealerCards))}
         verify { strategy.recordResult(Outcome.WIN, minBet.toDouble(), handMatch(playerCards), handMatch(dealerCards))}

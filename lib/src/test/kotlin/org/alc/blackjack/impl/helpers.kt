@@ -13,7 +13,7 @@ data class HandMatch(
         if (arg == null) return false
         if (arg.nbCards() != expected.size) return false
         for (i in 0..<arg.nbCards()) {
-            if (arg.getCard(i) != arg[i]) return false
+            if (arg[i] != expected[i] ) return false
         }
         return true
     }
@@ -28,8 +28,22 @@ data class HandMatch(
 
 fun MockKMatcherScope.handMatch(cards: List<Card>) = match(HandMatch(cards))
 
-fun <T> select(from: List<T>, vararg idx: Int) = mutableListOf<T>().also { list ->
-    idx.forEach { list.add(from[it]) }
+fun <T> select(from: List<T>, vararg idx: Int) = buildList<T> {
+    idx.forEach { add(from[it]) }
+}
+
+fun verifyPlayerCards(observer: Observer, cards: List<Card>) {
+    verifyOrder {
+        cards.forEach { observer.received(it)}
+    }
+}
+
+fun verifyDealerCards(observer: Observer, cards: List<Card>) {
+    verifyOrder {
+        observer.dealerReceived(cards[0])
+        observer.dealerCardVisible(cards[1])
+        for (i in 2 until cards.size) observer.dealerReceived(cards[i])
+    }
 }
 
 class HandBuilder(

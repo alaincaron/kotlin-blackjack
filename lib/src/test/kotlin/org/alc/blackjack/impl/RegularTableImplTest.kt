@@ -24,9 +24,16 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
 
         table.newRound()
 
+        verifyPlayerCards(strategy, playerCards)
+        verifyDealerCards(strategy, dealerCards)
+
         verify { strategy.recordResult(Outcome.PUSH, 0.0, handMatch(playerCards), handMatch(dealerCards)) }
         assertEquals(initialAmount, account.balance())
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
+        verify {
+            strategy.finalHand(handMatch(playerCards))
+            strategy.finalDealerHand(handMatch(dealerCards))
+        }
     }
 
     @Test
@@ -39,12 +46,15 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
             Card.king.diamonds // dealer hidden card
         )
         val playerCards = select(cards, 0, 2)
-        val dealerCards = select(cards, 1, 2)
+        val dealerCards = select(cards, 1, 3)
         prepareShoe(cards)
 
         every { strategy.equalPayment() } returns true
 
         table.newRound()
+
+        verifyPlayerCards(strategy, playerCards)
+        verifyDealerCards(strategy, dealerCards)
 
         verify {
             strategy.recordResult(
@@ -56,6 +66,10 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
         }
         assertEquals(initialAmount + minBet, account.balance())
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
+        verify {
+            strategy.finalHand(handMatch(playerCards))
+            strategy.finalDealerHand(handMatch(dealerCards))
+        }
     }
 
     @Test
@@ -68,7 +82,8 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
             Card.ace.diamonds // dealer hidden card
         )
 
-        val playCards = select(cards, 0, 2)
+        val playerCards = select(cards, 0, 2)
+        val dealerCards = select(cards, 1, 3)
 
         prepareShoe(cards)
 
@@ -76,9 +91,24 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
 
         table.newRound()
 
-        verify { strategy.recordResult(Outcome.BLACKJACK_EQUAL_PAYMENT, minBet.toDouble(), handMatch(playCards), null) }
+        verifyPlayerCards(strategy, playerCards)
+        verifyDealerCards(strategy, dealerCards)
+
+        verify {
+            strategy.recordResult(
+                Outcome.BLACKJACK_EQUAL_PAYMENT,
+                minBet.toDouble(),
+                handMatch(playerCards),
+                null
+            )
+        }
         assertEquals(initialAmount + minBet, account.balance())
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
+
+        verify {
+            strategy.finalHand(handMatch(playerCards))
+            strategy.finalDealerHand(handMatch(dealerCards))
+        }
     }
 
     @Test
@@ -92,13 +122,21 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
         )
         prepareShoe(cards)
         val playerCards = select(cards, 0, 2)
+        val dealerCards = select(cards, 1, 3)
         every { strategy.equalPayment() } returns false
 
         table.newRound()
 
+        verifyPlayerCards(strategy, playerCards)
+        verifyDealerCards(strategy, dealerCards)
+
         verify { strategy.recordResult(Outcome.BLACKJACK, minBet * 1.5, handMatch(playerCards), null) }
         assertEquals(initialAmount + minBet * 1.5, account.balance())
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
+        verify {
+            strategy.finalHand(handMatch(playerCards))
+            strategy.finalDealerHand(handMatch(dealerCards))
+        }
     }
 
     @Test
@@ -115,13 +153,16 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
             Card.five.spades   // dealer 3rd card
         )
         prepareShoe(cards)
-        val dealerCards = listOf(cards[1], cards[3], cards[6])
-        val playerInitialHand = listOf(cards[0], cards[2])
-        val playerFirstHandCards = listOf(cards[0], cards[4])
-        val playerSecondHandCards = listOf(cards[2], cards[5])
-        every { strategy.nextMove(handMatch(playerInitialHand), dealerCards[0]) } returns Decision.SPLIT
+        val dealerCards = select(cards, 1 ,3, 6)
+        val playerInitialCards = select(cards, 0, 2)
+        val playerFirstHandCards = select(cards, 0, 4)
+        val playerSecondHandCards = select(cards, 2, 5)
+        every { strategy.nextMove(handMatch(playerInitialCards), dealerCards[0]) } returns Decision.SPLIT
 
         table.newRound()
+
+        verifyPlayerCards(strategy, select(cards, 0, 2, 4, 5))
+        verifyDealerCards(strategy, dealerCards)
 
         verify {
             strategy.recordResult(
@@ -161,8 +202,8 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
             Card.five.spades   // dealer 3rd card
         )
 
-        val firstHand = select(cards, 0, 4, 5)
-        val secondHand = select(cards, 2, 6, 7)
+        val playerFirstHand = select(cards, 0, 4, 5)
+        val playerSecondHand = select(cards, 2, 6, 7)
         val dealerHand = select(cards, 1, 3, 8)
 
         prepareShoe(cards)
@@ -174,11 +215,17 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
 
         table.newRound()
 
-        verify { strategy.recordResult(Outcome.DOUBLE_WIN, minBet * 2.0, handMatch(firstHand), handMatch(dealerHand))}
-        verify { strategy.recordResult(Outcome.BUST, minBet.toDouble(), handMatch(secondHand), null) }
+        verifyPlayerCards(strategy, select(cards, 0, 2, 4, 5))
+        verifyDealerCards(strategy, dealerHand)
+
+        verify { strategy.recordResult(Outcome.DOUBLE_WIN, minBet * 2.0, handMatch(playerFirstHand), handMatch(dealerHand)) }
+        verify { strategy.recordResult(Outcome.BUST, minBet.toDouble(), handMatch(playerSecondHand), null) }
         assertEquals(initialAmount + minBet, account.balance())
-        verify(exactly = 2) { strategy.finalHand(any()) }
-        verify { strategy.finalDealerHand(any()) }
+        verifyOrder {
+            strategy.finalHand(handMatch(playerFirstHand))
+            strategy.finalHand(handMatch(playerSecondHand))
+        }
+        verify { strategy.finalDealerHand(handMatch(dealerHand)) }
     }
 
     @Test
@@ -190,22 +237,25 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
             Card.nine.hearts,   // player 2nd card
             Card.ace.diamonds, // dealer hidden card
         )
+
+        val playerHand = select(cards, 0,2)
+        val dealerHand = select(cards, 1, 3)
+
         prepareShoe(cards)
 
         every { strategy.nextMove(any(), any()) } returns Decision.STAND
 
-        val playerHand = select(cards, 0, 2)
-        val dealerHand = select(cards, 1, 3)
-
         table.newRound()
+
+        verifyPlayerCards(strategy, playerHand)
+        verifyDealerCards(strategy, dealerHand)
 
         verify { strategy.recordResult(Outcome.PUSH, 0.0, handMatch(playerHand), handMatch(dealerHand)) }
 
         assertEquals(initialAmount, account.balance())
-        verify { strategy.dealerReceived(Card.six.spades) }
-        verify { strategy.dealerCardVisible(Card.ace.diamonds) }
-        verify { strategy.received(Card.eight.spades) }
-        verify { strategy.received(Card.nine.hearts) }
+
+        verify { strategy.finalHand(handMatch(playerHand))}
+        verify { strategy.finalDealerHand(handMatch(dealerHand))}
     }
 
     @Test
@@ -220,11 +270,14 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
         )
         prepareShoe(cards)
         val playerCards = select(cards, 0, 2)
-        val dealerCards = select(cards, 1,3,4)
+        val dealerCards = select(cards, 1, 3, 4)
 
         every { strategy.nextMove(any(), any()) } returns Decision.STAND
 
         table.newRound()
+
+        verifyPlayerCards(strategy, playerCards)
+        verifyDealerCards(strategy, dealerCards)
 
         verify {
             strategy.recordResult(
@@ -235,10 +288,9 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
             )
         }
         assertEquals(initialAmount - minBet, account.balance())
-        verify { strategy.dealerReceived(Card.six.spades) }
-        verify { strategy.dealerCardVisible(Card.ace.diamonds) }
-        verify { strategy.dealerReceived(Card.three.spades) }
-        verify { strategy.received(Card.eight.spades) }
-        verify { strategy.received(Card.nine.hearts) }
+        verify {
+            strategy.finalHand(handMatch(playerCards))
+            strategy.finalDealerHand(handMatch(dealerCards))
+        }
     }
 }
