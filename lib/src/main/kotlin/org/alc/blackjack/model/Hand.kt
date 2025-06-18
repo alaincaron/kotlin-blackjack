@@ -1,6 +1,6 @@
 package org.alc.blackjack.model
 
-import org.alc.card.model.Card
+import org.alc.card.model.*
 
 interface Hand {
     val isFromSplit: Boolean
@@ -8,6 +8,7 @@ interface Hand {
     val isFree: Boolean
     fun addCard(c: Card)
     fun nbCards(): Int
+    fun cards(): List<Card>
     fun score(): Int
     operator fun get(i: Int) = getCard(i)
     fun isBlackJack(): Boolean = nbCards() == 2 && score() == 21 && !isFromSplit

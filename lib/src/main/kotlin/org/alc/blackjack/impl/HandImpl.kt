@@ -1,9 +1,7 @@
 package org.alc.blackjack.impl
 
-import org.alc.blackjack.model.Hand
-import org.alc.blackjack.model.TableRule
-import org.alc.card.model.Card
-import org.alc.card.model.Rank
+import org.alc.blackjack.model.*
+import org.alc.card.model.*
 
 
 internal class HandImpl(
@@ -14,7 +12,7 @@ internal class HandImpl(
     override val isFree: Boolean = false
 ) : Hand {
     private var _score = 0
-    private val cards = ArrayList<Card>()
+    private val _cards = ArrayList<Card>()
     private var _soft = false
     private var _insurance = 0.0
     private var _totalBet = initialBet
@@ -31,24 +29,25 @@ internal class HandImpl(
         _surrendered = true
     }
 
-    override fun getCard(idx: Int): Card = cards[idx]
+    override fun getCard(idx: Int): Card = _cards[idx]
 
     internal fun insure(premium: Double) {
         _insurance = premium
     }
 
+    override fun cards() = _cards.toList()
 
     override fun canBeSplit() =
-        canBeSplit && cards.size == 2 && cards[0].value == cards[1].value
+        canBeSplit && _cards.size == 2 && _cards[0].value == _cards[1].value
 
-    override fun canBeDoubled(rule: TableRule) = when (cards.size) {
+    override fun canBeDoubled(rule: TableRule) = when (_cards.size) {
         0, 1 -> false
         2 -> canBeHit()
         else -> rule.allowDoubleAnytime && canBeHit()
     }
 
     override fun addCard(c: Card) {
-        cards.add(c)
+        _cards.add(c)
         val value = c.value
         _score += if (value == 11) 1 else value
         if (value == 11 || _soft) {
@@ -56,7 +55,7 @@ internal class HandImpl(
         }
     }
 
-    override fun nbCards() = cards.size
+    override fun nbCards() = _cards.size
 
     override fun score() = if (_soft && _score <= 11) _score + 10 else _score
     override fun isFreeDoubled() = freeDouble
@@ -66,7 +65,7 @@ internal class HandImpl(
     override fun surrendered() = _surrendered
 
     override fun toString() =
-         "HandImpl(initialBet=$initialBet, cards=$cards, isFromSplit=$isFromSplit, canBeHit=$canBeHit, canBeSplit=$canBeSplit, isFree=$isFree, _score=$_score, _soft=$_soft, _insurance=$_insurance, _totalBet=$_totalBet, equalPayment=$equalPayment, _surrendered=$_surrendered, freeDouble=$freeDouble)"
+        "HandImpl(initialBet=$initialBet, cards=$_cards, isFromSplit=$isFromSplit, canBeHit=$canBeHit, canBeSplit=$canBeSplit, isFree=$isFree, _score=$_score, _soft=$_soft, _insurance=$_insurance, _totalBet=$_totalBet, equalPayment=$equalPayment, _surrendered=$_surrendered, freeDouble=$freeDouble)"
 
 }
 

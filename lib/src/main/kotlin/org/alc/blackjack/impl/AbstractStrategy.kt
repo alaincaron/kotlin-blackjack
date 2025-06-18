@@ -1,8 +1,8 @@
 package org.alc.blackjack.impl
 
 import org.alc.blackjack.model.*
-import org.alc.card.model.Card
-import kotlin.math.max
+import org.alc.card.model.*
+import kotlin.math.*
 
 abstract class AbstractStrategy(final override val account: Account) : Strategy {
     private var _nbPush = 0
@@ -36,9 +36,9 @@ abstract class AbstractStrategy(final override val account: Account) : Strategy 
     override fun dealerReceived(card: Card) {}
     override fun dealerCardVisible(card: Card) {}
     override fun finalHand(hand: Hand) {}
-    override fun finalDealerHand(hand: Hand) {}
+    override fun finalDealerHand(hand: Hand, result: DealerResult) {}
 
-    override fun recordResult(outcome: Outcome, amount: Double, playerHand: Hand, dealerHand: Hand?) {
+    override fun recordResult(outcome: Outcome, amount: Double, playerHand: Hand, dealerHand: Hand) {
         when (outcome) {
             Outcome.LOSS, Outcome.BUST, Outcome.SURRENDER, Outcome.DOUBLE_RESCUE, Outcome.DOUBLE_LOSS -> {
                 ++_nbLoss

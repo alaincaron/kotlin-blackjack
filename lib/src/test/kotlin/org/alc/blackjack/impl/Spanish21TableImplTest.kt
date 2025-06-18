@@ -36,7 +36,7 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
 
         verify { strategy.finalHand(handMatch(playerHand))}
-        verify { strategy.finalDealerHand(handMatch(dealerHand))}
+        verify { strategy.finalDealerHand(handMatch(dealerHand), DealerResult.BLACKJACK) }
     }
 
     @Test
@@ -70,7 +70,14 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verifyPlayerCards(strategy, select(cards, 0, 2,4,5,6,7))
         verifyDealerCards(strategy, dealerHand)
 
-        verify { strategy.recordResult(Outcome.DOUBLE_WIN, minBet * 2.0, handMatch(playerFirstHand), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.DOUBLE_WIN,
+                minBet * 2.0,
+                handMatch(playerFirstHand),
+                handMatch(dealerHand[0])
+            )
+        }
         verify {
             strategy.recordResult(
                 Outcome.LOSS,
@@ -83,7 +90,7 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verifyOrder {
             strategy.finalHand(handMatch(playerFirstHand))
             strategy.finalHand(handMatch(playerSecondHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.STAND)
         }
     }
 
@@ -110,7 +117,7 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         assertEquals(initialAmount, account.balance())
         verifyOrder {
             strategy.finalHand(handMatch(playerHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.STAND)
         }
     }
 
@@ -122,7 +129,7 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
             Card.six.spades,   // dealer visible card
             Card.nine.hearts,   // player 2nd card
             Card.ace.diamonds, // dealer hidden card
-            Card.three.spades
+            Card.three.spades  // dealer 3rd card
         )
         prepareShoe(cards)
 
@@ -139,7 +146,7 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         assertEquals(initialAmount - minBet, account.balance())
         verifyOrder {
             strategy.finalHand(handMatch(playerHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.STAND)
         }
     }
 
@@ -165,11 +172,18 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verifyPlayerCards(strategy, playerHand)
         verifyDealerCards(strategy, dealerHand)
 
-        verify { strategy.recordResult(Outcome.SUPER_7_BONUS, 1000.0 + minBet * 3.0, handMatch(playerHand), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.SUPER_7_BONUS,
+                1000.0 + minBet * 3.0,
+                handMatch(playerHand),
+                handMatch(dealerHand[0])
+            )
+        }
         assertEquals(initialAmount + 1000.0 + minBet * 3, account.balance())
         verifyOrder {
             strategy.finalHand(handMatch(playerHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.NO_PULL)
         }
     }
 
@@ -194,11 +208,18 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verifyPlayerCards(strategy, playerHand)
         verifyDealerCards(strategy, dealerHand)
 
-        verify { strategy.recordResult(Outcome.BONUS_21_2, minBet * 2.0, handMatch(playerHand), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.BONUS_21_2,
+                minBet * 2.0,
+                handMatch(playerHand),
+                handMatch(dealerHand[0])
+            )
+        }
         assertEquals(initialAmount + minBet * 2.0, account.balance())
         verifyOrder {
             strategy.finalHand(handMatch(playerHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.NO_PULL)
         }
     }
 
@@ -223,11 +244,18 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verifyPlayerCards(strategy, playerHand)
         verifyDealerCards(strategy, dealerHand)
 
-        verify { strategy.recordResult(Outcome.BONUS_21, minBet * 1.5, handMatch(playerHand), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.BONUS_21,
+                minBet * 1.5,
+                handMatch(playerHand),
+                handMatch(dealerHand[0])
+            )
+        }
         assertEquals(initialAmount + minBet * 1.5, account.balance())
         verifyOrder {
             strategy.finalHand(handMatch(playerHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.NO_PULL)
         }
     }
 
@@ -252,11 +280,18 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verifyPlayerCards(strategy, playerHand)
         verifyDealerCards(strategy, dealerHand)
 
-        verify { strategy.recordResult(Outcome.BONUS_21_3, minBet * 3.0, handMatch(playerHand), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.BONUS_21_3,
+                minBet * 3.0,
+                handMatch(playerHand),
+                handMatch(dealerHand[0])
+            )
+        }
         assertEquals(initialAmount + minBet * 3.0, account.balance())
         verifyOrder {
             strategy.finalHand(handMatch(playerHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.NO_PULL)
         }
     }
 
@@ -281,11 +316,18 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verifyPlayerCards(strategy, playerHand)
         verifyDealerCards(strategy, dealerHand)
 
-        verify { strategy.recordResult(Outcome.BONUS_21_2, minBet * 2.0, handMatch(playerHand), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.BONUS_21_2,
+                minBet * 2.0,
+                handMatch(playerHand),
+                handMatch(dealerHand[0])
+            )
+        }
         assertEquals(initialAmount + minBet * 2.0, account.balance())
         verifyOrder {
             strategy.finalHand(handMatch(playerHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.NO_PULL)
         }
     }
 
@@ -310,11 +352,18 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verifyPlayerCards(strategy, playerHand)
         verifyDealerCards(strategy, dealerHand)
 
-        verify { strategy.recordResult(Outcome.BONUS_21, minBet * 1.5, handMatch(playerHand), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.BONUS_21,
+                minBet * 1.5,
+                handMatch(playerHand),
+                handMatch(dealerHand[0])
+            )
+        }
         assertEquals(initialAmount + minBet * 1.5, account.balance())
         verifyOrder {
             strategy.finalHand(handMatch(playerHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.NO_PULL)
         }
     }
 
@@ -341,11 +390,18 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verifyPlayerCards(strategy, playerHand)
         verifyDealerCards(strategy, dealerHand)
 
-        verify { strategy.recordResult(Outcome.BONUS_21, minBet * 1.5, handMatch(playerHand), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.BONUS_21,
+                minBet * 1.5,
+                handMatch(playerHand),
+                handMatch(dealerHand[0])
+            )
+        }
         assertEquals(initialAmount + minBet * 1.5, account.balance())
         verifyOrder {
             strategy.finalHand(handMatch(playerHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.NO_PULL)
         }
     }
 
@@ -372,12 +428,19 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verifyPlayerCards(strategy, playerHand)
         verifyDealerCards(strategy, dealerHand)
 
-        verify { strategy.recordResult(Outcome.BONUS_21_2, minBet * 2.0, handMatch(playerHand), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.BONUS_21_2,
+                minBet * 2.0,
+                handMatch(playerHand),
+                handMatch(dealerHand[0])
+            )
+        }
         assertEquals(initialAmount + minBet * 2.0, account.balance())
 
         verifyOrder {
             strategy.finalHand(handMatch(playerHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.NO_PULL)
         }
     }
 
@@ -407,12 +470,19 @@ class Spanish21TableImplTest : TableImplTestHelper(TableRule.SPANISH21) {
         verifyPlayerCards(strategy, playerHand)
         verifyDealerCards(strategy, dealerHand)
 
-        verify { strategy.recordResult(Outcome.BONUS_21_3, minBet * 3.0, handMatch(playerHand), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.BONUS_21_3,
+                minBet * 3.0,
+                handMatch(playerHand),
+                handMatch(dealerHand[0])
+            )
+        }
         assertEquals(initialAmount + minBet * 3.0, account.balance())
 
         verifyOrder {
             strategy.finalHand(handMatch(playerHand))
-            strategy.finalDealerHand(handMatch(dealerHand))
+            strategy.finalDealerHand(handMatch(dealerHand), DealerResult.NO_PULL)
         }
     }
 }

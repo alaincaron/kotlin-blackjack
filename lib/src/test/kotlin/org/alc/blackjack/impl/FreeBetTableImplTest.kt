@@ -54,7 +54,7 @@ class FreeBetTableImplTest : TableImplTestHelper(TableRule.FREE_BET) {
         assertEquals(initialAmount + minBet, account.balance())
         verify { strategy.finalHand(handMatch(playerFirstHandCards)) }
         verify { strategy.finalHand(handMatch(playerSecondHandCards)) }
-        verify { strategy.finalDealerHand(handMatch(dealerCards)) }
+        verify { strategy.finalDealerHand(handMatch(dealerCards), DealerResult.STAND) }
     }
 
     @Test
@@ -95,10 +95,13 @@ class FreeBetTableImplTest : TableImplTestHelper(TableRule.FREE_BET) {
                 handMatch(dealerCards)
             )
         }
-        verify { strategy.recordResult(Outcome.BUST, 0.0, handMatch(playerSecondHandCards), null) }
+
+        verify { strategy.recordResult(Outcome.BUST, 0.0, handMatch(playerSecondHandCards), handMatch(dealerCards[0])) }
+
+
         assertEquals(initialAmount + 2 * minBet, account.balance())
         verify { strategy.finalHand(handMatch(playerFirstHandCards)) }
         verify { strategy.finalHand(handMatch(playerSecondHandCards)) }
-        verify { strategy.finalDealerHand(handMatch(dealerCards)) }
+        verify { strategy.finalDealerHand(handMatch(dealerCards), DealerResult.STAND) }
     }
 }

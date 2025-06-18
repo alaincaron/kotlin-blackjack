@@ -18,3 +18,11 @@ enum class Outcome {
     DOUBLE_RESCUE,
     INSURANCE_LOSS
 }
+
+enum class DealerResult {
+    NO_PULL,
+    PUSH,
+    BUST,
+    BLACKJACK,
+    STAND
+}

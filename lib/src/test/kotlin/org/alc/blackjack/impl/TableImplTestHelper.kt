@@ -1,15 +1,13 @@
 package org.alc.blackjack.impl
 
 import io.mockk.*
-import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.impl.annotations.*
 import org.alc.blackjack.model.*
-import org.alc.card.model.Card
-import org.alc.card.model.GameShoe
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
+import org.alc.card.model.*
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Test
 import java.util.*
-import kotlin.test.assertEquals
+import kotlin.test.*
 
 abstract class TableImplTestHelper(
     protected val defaultRule: TableRule,
@@ -56,7 +54,7 @@ abstract class TableImplTestHelper(
         table.addPlayer(player)
     }
 
-    protected fun prepareShoe( cards: List<Card>) {
+    protected fun prepareShoe(cards: List<Card>) {
         every { shoe.dealCard() } returnsMany buildList(cards.size + 1) {
             add(Card.two.spades) // throw-away card
             addAll(cards)
@@ -75,7 +73,7 @@ abstract class TableImplTestHelper(
         )
         prepareShoe(cards)
         val dealerCards = select(cards, 1, 3)
-        val playerCards = select(cards,0, 2)
+        val playerCards = select(cards, 0, 2)
         every { strategy.insurance(handMatch(playerCards)) } returns true
 
         table.newRound()
@@ -85,9 +83,9 @@ abstract class TableImplTestHelper(
 
         assertEquals(initialAmount, account.balance())
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
-        verify { strategy.finalDealerHand(handMatch(dealerCards)) }
+        verify { strategy.finalDealerHand(handMatch(dealerCards), DealerResult.BLACKJACK) }
         verify { strategy.finalHand(handMatch(playerCards)) }
-        verify { strategy.recordResult(Outcome.PUSH, 0.0, handMatch(playerCards), handMatch(dealerCards))}
+        verify { strategy.recordResult(Outcome.PUSH, 0.0, handMatch(playerCards), handMatch(dealerCards)) }
     }
 
     @Test
@@ -112,8 +110,15 @@ abstract class TableImplTestHelper(
 
         assertEquals(initialAmount - minBet, account.balance())
         verify { strategy.finalHand(handMatch(playerCards)) }
-        verify { strategy.finalDealerHand(handMatch(dealerCards)) }
-        verify { strategy.recordResult(Outcome.LOSS, minBet.toDouble(), handMatch(playerCards), handMatch(dealerCards))}
+        verify { strategy.finalDealerHand(handMatch(dealerCards), DealerResult.BLACKJACK) }
+        verify {
+            strategy.recordResult(
+                Outcome.LOSS,
+                minBet.toDouble(),
+                handMatch(playerCards),
+                handMatch(dealerCards)
+            )
+        }
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
     }
 
@@ -131,7 +136,10 @@ abstract class TableImplTestHelper(
         val dealerCards = select(cards, 1, 3)
         val playerInitialCards = select(cards, 0, 2)
         every { strategy.insurance(handMatch(playerInitialCards)) } returns false
-        every { strategy.nextMove(handMatch(playerInitialCards), dealerCards[0]) } returns Decision.HIT
+        every { strategy.nextMove(handMatch(playerInitialCards), dealerCards[0]) } returnsMany listOf(
+            Decision.HIT,
+            Decision.STAND
+        )
         val playerCards = playerInitialCards + cards[4]
 
         table.newRound()
@@ -140,8 +148,8 @@ abstract class TableImplTestHelper(
         verifyDealerCards(strategy, dealerCards)
 
         assertEquals(initialAmount + minBet, account.balance())
-        verify { strategy.finalHand(handMatch(playerCards))}
-        verify { strategy.finalDealerHand(handMatch(dealerCards))}
-        verify { strategy.recordResult(Outcome.WIN, minBet.toDouble(), handMatch(playerCards), handMatch(dealerCards))}
+        verify { strategy.finalHand(handMatch(playerCards)) }
+        verify { strategy.finalDealerHand(handMatch(dealerCards), DealerResult.STAND) }
+        verify { strategy.recordResult(Outcome.WIN, minBet.toDouble(), handMatch(playerCards), handMatch(dealerCards)) }
     }
 }

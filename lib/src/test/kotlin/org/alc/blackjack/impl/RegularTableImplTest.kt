@@ -32,7 +32,7 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
         verify {
             strategy.finalHand(handMatch(playerCards))
-            strategy.finalDealerHand(handMatch(dealerCards))
+            strategy.finalDealerHand(handMatch(dealerCards), DealerResult.BLACKJACK)
         }
     }
 
@@ -68,7 +68,7 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
         verify {
             strategy.finalHand(handMatch(playerCards))
-            strategy.finalDealerHand(handMatch(dealerCards))
+            strategy.finalDealerHand(handMatch(dealerCards), DealerResult.BLACKJACK)
         }
     }
 
@@ -99,7 +99,7 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
                 Outcome.BLACKJACK_EQUAL_PAYMENT,
                 minBet.toDouble(),
                 handMatch(playerCards),
-                null
+                handMatch(dealerCards[0])
             )
         }
         assertEquals(initialAmount + minBet, account.balance())
@@ -107,7 +107,7 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
 
         verify {
             strategy.finalHand(handMatch(playerCards))
-            strategy.finalDealerHand(handMatch(dealerCards))
+            strategy.finalDealerHand(handMatch(dealerCards), DealerResult.NO_PULL)
         }
     }
 
@@ -130,12 +130,19 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
         verifyPlayerCards(strategy, playerCards)
         verifyDealerCards(strategy, dealerCards)
 
-        verify { strategy.recordResult(Outcome.BLACKJACK, minBet * 1.5, handMatch(playerCards), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.BLACKJACK,
+                minBet * 1.5,
+                handMatch(playerCards),
+                handMatch(dealerCards[0])
+            )
+        }
         assertEquals(initialAmount + minBet * 1.5, account.balance())
         verify(exactly = 0) { strategy.nextMove(any(), any()) }
         verify {
             strategy.finalHand(handMatch(playerCards))
-            strategy.finalDealerHand(handMatch(dealerCards))
+            strategy.finalDealerHand(handMatch(dealerCards), DealerResult.NO_PULL)
         }
     }
 
@@ -184,7 +191,7 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
         assertEquals(initialAmount, account.balance())
         verify { strategy.finalHand(handMatch(playerFirstHandCards)) }
         verify { strategy.finalHand(handMatch(playerSecondHandCards)) }
-        verify { strategy.finalDealerHand(handMatch(dealerCards)) }
+        verify { strategy.finalDealerHand(handMatch(dealerCards), DealerResult.STAND) }
     }
 
     @Test
@@ -219,13 +226,20 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
         verifyDealerCards(strategy, dealerHand)
 
         verify { strategy.recordResult(Outcome.DOUBLE_WIN, minBet * 2.0, handMatch(playerFirstHand), handMatch(dealerHand)) }
-        verify { strategy.recordResult(Outcome.BUST, minBet.toDouble(), handMatch(playerSecondHand), null) }
+        verify {
+            strategy.recordResult(
+                Outcome.BUST,
+                minBet.toDouble(),
+                handMatch(playerSecondHand),
+                handMatch(dealerHand[0])
+            )
+        }
         assertEquals(initialAmount + minBet, account.balance())
         verifyOrder {
             strategy.finalHand(handMatch(playerFirstHand))
             strategy.finalHand(handMatch(playerSecondHand))
         }
-        verify { strategy.finalDealerHand(handMatch(dealerHand)) }
+        verify { strategy.finalDealerHand(handMatch(dealerHand), DealerResult.STAND) }
     }
 
     @Test
@@ -255,7 +269,7 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
         assertEquals(initialAmount, account.balance())
 
         verify { strategy.finalHand(handMatch(playerHand))}
-        verify { strategy.finalDealerHand(handMatch(dealerHand))}
+        verify { strategy.finalDealerHand(handMatch(dealerHand), DealerResult.STAND) }
     }
 
     @Test
@@ -290,7 +304,7 @@ class RegularTableImplTest : TableImplTestHelper(TableRule.DEFAULT) {
         assertEquals(initialAmount - minBet, account.balance())
         verify {
             strategy.finalHand(handMatch(playerCards))
-            strategy.finalDealerHand(handMatch(dealerCards))
+            strategy.finalDealerHand(handMatch(dealerCards), DealerResult.STAND)
         }
     }
 }

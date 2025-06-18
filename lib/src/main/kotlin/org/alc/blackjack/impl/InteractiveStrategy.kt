@@ -1,7 +1,7 @@
 package org.alc.blackjack.impl
 
 import org.alc.blackjack.model.*
-import org.alc.card.model.Card
+import org.alc.card.model.*
 
 
 open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
@@ -135,13 +135,18 @@ open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
         else println("Player score is ${hand.score()}")
     }
 
-    override fun finalDealerHand(hand: Hand) {
-        if (hand.isBusted()) println("Dealer busted with ${hand.score()}")
-        else if (hand.isBlackJack()) println("Dealer got blackjack")
-        else println("Dealer score is ${hand.score()}")
+    override fun finalDealerHand(hand: Hand, result: DealerResult) {
+        val score = hand.score()
+        when (result) {
+            DealerResult.BLACKJACK -> println("Dealer got blackjack")
+            DealerResult.PUSH -> println("Dealer score is $score: PUSH")
+            DealerResult.BUST -> println("Dealer busted with a score of $score")
+            DealerResult.NO_PULL -> println("Dealer doesn't need to pull card and has a score of $score")
+            DealerResult.STAND -> println("Dealer stands with a score of $score")
+        }
     }
 
-    override fun recordResult(outcome: Outcome, amount: Double, playerHand: Hand, dealerHand: Hand?) {
+    override fun recordResult(outcome: Outcome, amount: Double, playerHand: Hand, dealerHand: Hand) {
         super.recordResult(outcome, amount, playerHand, dealerHand)
         when (outcome) {
             Outcome.LOSS, Outcome.BUST, Outcome.SURRENDER, Outcome.DOUBLE_RESCUE, Outcome.DOUBLE_LOSS -> {
@@ -160,5 +165,4 @@ open class InteractiveStrategy(account: Account) : AbstractStrategy(account) {
 
         }
     }
-
 }

@@ -154,14 +154,14 @@ class TableImpl(
         }
     }
 
-    private fun recordWin(player: Player, hand: Hand, amountWon: Double, outcome: Outcome, dealerHand: Hand?) {
+    private fun recordWin(player: Player, hand: Hand, amountWon: Double, outcome: Outcome, dealerHand: Hand) {
         logger.info("Player won $amountWon")
         val netWon = amountWon - hand.insurance()
         player.deposit(hand.netBet() + amountWon)
         player.recordResult(outcome, netWon, hand, dealerHand)
     }
 
-    private fun recordLoss(player: Player, hand: Hand, dealerHand: Hand?) {
+    private fun recordLoss(player: Player, hand: Hand, dealerHand: Hand) {
         var outcome: Outcome
         var netloss: Double
 
@@ -177,7 +177,7 @@ class TableImpl(
             netloss = hand.netBet() + hand.insurance()
             outcome = when {
                 hand.isDoubled() -> Outcome.DOUBLE_LOSS
-                dealerHand == null -> Outcome.BUST
+                dealerHand.nbCards() == 1 -> Outcome.BUST
                 else -> Outcome.LOSS
             }
         }
@@ -191,7 +191,7 @@ class TableImpl(
 
     private fun handleDealerBlackJack(dealerHand: Hand) {
         playerHands.forEach { (player, ph) ->
-            player.finalDealerHand(dealerHand)
+            player.finalDealerHand(dealerHand, DealerResult.BLACKJACK)
             ph.hands.forEach { hand ->
                 player.finalHand(hand)
                 if (hand.isBlackJack()) {
@@ -377,7 +377,8 @@ class TableImpl(
         return Pair(hand.initialBet.toDouble(), Outcome.WIN)
     }
 
-    private fun playHands(dealerUpCard: Card) {
+    private fun playHands(dealerHand: Hand) {
+        val dealerUpCard = dealerHand[0]
         playerHands.forEach { (player, ph) ->
             var i = 0
             val hands = ph.hands
@@ -387,10 +388,16 @@ class TableImpl(
                     player.finalHand(hand)
                     if (hand.equalPayment) {
                         logger.info("Player accepted equal payment on Blackjack")
-                        recordWin(player, hand, hand.totalBet().toDouble(), Outcome.BLACKJACK_EQUAL_PAYMENT, null)
+                        recordWin(player, hand, hand.totalBet().toDouble(), Outcome.BLACKJACK_EQUAL_PAYMENT, dealerHand)
                     } else {
                         logger.info("BlackJack pays ${rule.blackjackPayFactor} the bet")
-                        recordWin(player, hand, hand.totalBet() * rule.blackjackPayFactor, Outcome.BLACKJACK, null)
+                        recordWin(
+                            player,
+                            hand,
+                            hand.totalBet() * rule.blackjackPayFactor,
+                            Outcome.BLACKJACK,
+                            dealerHand
+                        )
                     }
                     hands.removeAt(i)
                 } else {
@@ -399,18 +406,18 @@ class TableImpl(
                     player.finalHand(h)
                     if (h.score() == 21 && rule.alwaysPay21) {
                         val bonus = bonus21(h, dealerUpCard)
-                        recordWin(player, h, bonus.first, bonus.second, null)
+                        recordWin(player, h, bonus.first, bonus.second, dealerHand)
                         hands.removeAt(i)
                     } else if (h.isBusted()) {
-                        recordLoss(player, h, null)
+                        recordLoss(player, h, dealerHand)
                         hands.removeAt(i)
                     } else if (h.surrendered()) {
                         if (!hand.isDoubled()) {
                             player.deposit(hand.totalBet() / 2.0)
-                            recordLoss(player, h, null)
+                            recordLoss(player, h, dealerHand)
                         } else {
                             player.deposit((hand.totalBet() - hand.initialBet).toDouble())
-                            recordLoss(player, h, null)
+                            recordLoss(player, h, dealerHand)
                         }
                         hands.removeAt(i)
                     } else {
@@ -431,14 +438,13 @@ class TableImpl(
         }
     }
 
-    private fun payWinningHands(dealerHand: Hand) {
-        val dealerScore = dealerHand.score()
+    private fun payWinningHands(dealerHand: Hand, dealerScore: Int, dealerResult: DealerResult) {
         playerHands.forEach { (player, ph) ->
             ph.hands.forEach { hand ->
                 val totalBet = hand.totalBet().toDouble()
                 val score = hand.score()
                 when {
-                    dealerScore > 22 || (dealerScore == 22 && !rule.pushOn22) -> recordWin(
+                    dealerResult == DealerResult.BUST -> recordWin(
                         player,
                         hand,
                         totalBet,
@@ -454,26 +460,19 @@ class TableImpl(
                         dealerHand
                     )
 
-                    score == dealerScore || dealerScore == 22 -> recordPush(player, hand, dealerHand)
+                    score == dealerScore || dealerResult == DealerResult.PUSH -> recordPush(player, hand, dealerHand)
                     else -> recordLoss(player, hand, dealerHand)
                 }
             }
         }
     }
 
-    private fun showHiddenCard(hiddenDealerCard: Card, visibleDealerCard: Card): HandImpl {
+    private fun showHiddenCard(dealerHand: HandImpl, hiddenDealerCard: Card) {
         logger.info("Dealer's hidden card is turned: $hiddenDealerCard")
         notifyCardDealt(hiddenDealerCard)
         playerHands.keys.forEach { it.dealerCardVisible(hiddenDealerCard) }
 
-        val dealerHand = HandImpl(
-            initialBet = 0,
-            canBeSplit = false
-        )
-
-        dealerHand.addCard(visibleDealerCard)
         dealerHand.addCard(hiddenDealerCard)
-        return dealerHand
     }
 
     override fun newRound(): Boolean {
@@ -485,8 +484,17 @@ class TableImpl(
         if (_gameShoe.nbRemainingCards() <= lastCardMarker) initGameShoe()
         dealOneCardToEachPlayer()
         val visibleDealerCard = drawCard()
+
+        val dealerHand = HandImpl(
+            initialBet = 0,
+            canBeSplit = false
+        ).also { hand ->
+            hand.addCard(visibleDealerCard)
+        }
+
         playerHands.keys.forEach { it.dealerReceived(visibleDealerCard) }
         logger.info("Dealer's visible card is $visibleDealerCard")
+
         dealOneCardToEachPlayer()
         val hiddenDealerCard = drawCard(visible = false)
 
@@ -495,21 +503,35 @@ class TableImpl(
             offerInsuranceOrEqualPayment()
             val hiddenCardValue = hiddenDealerCard.value
             if (hiddenCardValue == 10) {
-                val dealerHand = showHiddenCard(hiddenDealerCard, visibleDealerCard)
+                showHiddenCard(dealerHand, hiddenDealerCard)
                 handleDealerBlackJack(dealerHand)
                 return true
             }
         } else if (visibleDealerCard.value == 10 && hiddenDealerCard.value == 11) {
-            val dealerHand = showHiddenCard(hiddenDealerCard, visibleDealerCard)
+            showHiddenCard(dealerHand, hiddenDealerCard)
             handleDealerBlackJack(dealerHand)
             return true
         }
 
-        playHands(visibleDealerCard)
-        val dealerHand = showHiddenCard(hiddenDealerCard, visibleDealerCard)
-        if (playerHands.values.any { it.hands.isNotEmpty() }) dealerPlay(dealerHand)
-        playerHands.keys.forEach { it.finalDealerHand(dealerHand) }
-        payWinningHands(dealerHand)
+        playHands(dealerHand)
+        showHiddenCard(dealerHand, hiddenDealerCard)
+        val dealerResult: DealerResult
+        val score: Int
+
+        if (playerHands.values.any { it.hands.isNotEmpty() }) {
+            dealerPlay(dealerHand)
+            score = dealerHand.score()
+            dealerResult = when {
+                score > 22 -> DealerResult.BUST
+                score == 22 -> if (rule.pushOn22) DealerResult.PUSH else DealerResult.BUST
+                else -> DealerResult.STAND
+            }
+        } else {
+            score = dealerHand.score()
+            dealerResult = DealerResult.NO_PULL
+        }
+        playerHands.keys.forEach { it.finalDealerHand(dealerHand, dealerResult) }
+        payWinningHands(dealerHand, score, dealerResult)
         return true
     }
 

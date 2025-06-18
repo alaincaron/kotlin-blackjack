@@ -11,8 +11,8 @@ data class HandMatch(
 
     override fun match(arg: Hand?): Boolean {
         if (arg == null) return false
-        if (arg.nbCards() != expected.size) return false
-        for (i in 0..<arg.nbCards()) {
+        if (arg.nbCards() < expected.size) return false
+        for (i in expected.indices) {
             if (arg[i] != expected[i] ) return false
         }
         return true
@@ -26,6 +26,7 @@ data class HandMatch(
     }
 }
 
+fun MockKMatcherScope.handMatch(card: Card) = match(HandMatch(listOf(card)))
 fun MockKMatcherScope.handMatch(cards: List<Card>) = match(HandMatch(cards))
 
 fun <T> select(from: List<T>, vararg idx: Int) = buildList<T> {
